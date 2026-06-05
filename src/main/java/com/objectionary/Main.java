@@ -18,7 +18,8 @@ import org.openjdk.jmh.infra.Blackhole;
 
 /**
  * Benchmarks of long stream pipelines over an array of one million numbers:
- * one of only lightweight conversions, and one of every stateless operation.
+ * one of only lightweight conversions, one of every stateless operation, and
+ * one of the stateful operations that must remember state.
  *
  * @since 0.0.1
  */
@@ -72,6 +73,21 @@ public class Main {
                 .asLongStream()
                 .sum(),
             500_002_000_000L
+        );
+    }
+
+    @Benchmark
+    public long stateful() {
+        return this.verified(
+            Arrays.stream(this.numbers)
+                .skip(1_000)
+                .limit(800_000)
+                .sorted()
+                .distinct()
+                .dropWhile(number -> number < 50_000L)
+                .takeWhile(number -> number < 700_000L)
+                .sum(),
+            243_749_675_000L
         );
     }
 
