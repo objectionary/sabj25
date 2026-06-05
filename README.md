@@ -40,12 +40,12 @@ The benchmarks run on every push to `master`, and the table below
 
 | Benchmark | Mode | Threads | Samples | Score (ms/op) | Error |
 | --- | :---: | ---: | ---: | ---: | ---: |
-| com.objectionary.Main.scalar | avgt | 1 | 5 | 6.544 | ± 0.075 |
-| com.objectionary.Main.stateful | avgt | 1 | 5 | 12.260 | ± 0.096 |
-| com.objectionary.Main.stateless | avgt | 1 | 5 | 16.523 | ± 0.177 |
+| sabj25.Main.scalar | avgt | 1 | 5 | 24.768 | ± 0.863 |
+| sabj25.Main.stateful | avgt | 1 | 5 | 13.189 | ± 0.255 |
+| sabj25.Main.stateless | avgt | 1 | 5 | 15.919 | ± 0.262 |
 
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-06-05 at 14:34,
+on 2026-06-05 at 14:55,
 on Linux with 4 CPUs.
 <!-- benchmark_end -->
 
@@ -59,4 +59,4 @@ on Linux with 4 CPUs.
 [mapmulti]: https://github.com/Nikolas-Charalambidis/java-16-mapmulti-benchmark
 [rosales2023]: https://arxiv.org/abs/2302.10006
 [softwaremill]: https://softwaremill.com/benchmarking-java-streams/
-[benchmark-gha]: https://github.com/objectionary/sabj25/actions/runs/27021073192
+[benchmark-gha]: https://github.com/objectionary/sabj25/actions/runs/27022201502
