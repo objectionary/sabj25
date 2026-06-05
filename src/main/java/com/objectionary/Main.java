@@ -48,8 +48,20 @@ public class Main {
                 .asLongStream()
                 .boxed()
                 .mapToLong(Long::longValue)
+                .map(number -> number * 2L)
+                .filter(number -> number > 4L)
+                .peek(blackhole::consume)
+                .mapToDouble(number -> (double) number)
+                .map(value -> value + 0.5)
+                .mapToObj(Double::valueOf)
+                .mapToLong(Double::longValue)
+                .asDoubleStream()
+                .mapToInt(value -> (int) value)
+                .asLongStream()
+                .boxed()
+                .mapToLong(Long::longValue)
                 .sum(),
-            250_001_000_000L
+            500_002_000_000L
         );
     }
 
