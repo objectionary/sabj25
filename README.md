@@ -34,7 +34,30 @@ The benchmarks run on every push to `master`, and the table below
   is regenerated automatically by the CI pipeline:
 
 <!-- benchmark_begin -->
-Not measured yet, see [the benchmarking job][benchmark-gha].
+
+| Benchmark | Mode | Threads | Samples | Score | Error | Unit |
+| --- | :---: | ---: | ---: | ---: | ---: | :---: |
+| com.objectionary.Main.asDoubleStream | avgt | 1 | 5 | 4.462 | ± 0.040 | ms/op |
+| com.objectionary.Main.boxed | avgt | 1 | 5 | 2.145 | ± 0.022 | ms/op |
+| com.objectionary.Main.distinct | avgt | 1 | 5 | 58.048 | ± 25.257 | ms/op |
+| com.objectionary.Main.dropWhile | avgt | 1 | 5 | 0.319 | ± 0.003 | ms/op |
+| com.objectionary.Main.filter | avgt | 1 | 5 | 0.518 | ± 0.013 | ms/op |
+| com.objectionary.Main.flatMap | avgt | 1 | 5 | 7.217 | ± 0.071 | ms/op |
+| com.objectionary.Main.limit | avgt | 1 | 5 | 0.189 | ± 0.001 | ms/op |
+| com.objectionary.Main.map | avgt | 1 | 5 | 0.101 | ± 0.000 | ms/op |
+| com.objectionary.Main.mapMulti | avgt | 1 | 5 | 0.314 | ± 0.000 | ms/op |
+| com.objectionary.Main.mapToDouble | avgt | 1 | 5 | 4.462 | ± 0.054 | ms/op |
+| com.objectionary.Main.mapToInt | avgt | 1 | 5 | 0.133 | ± 0.022 | ms/op |
+| com.objectionary.Main.mapToObj | avgt | 1 | 5 | 2.147 | ± 0.024 | ms/op |
+| com.objectionary.Main.parallel | avgt | 1 | 5 | 0.129 | ± 0.003 | ms/op |
+| com.objectionary.Main.peek | avgt | 1 | 5 | 0.315 | ± 0.001 | ms/op |
+| com.objectionary.Main.skip | avgt | 1 | 5 | 0.658 | ± 0.016 | ms/op |
+| com.objectionary.Main.sorted | avgt | 1 | 5 | 1.635 | ± 0.042 | ms/op |
+| com.objectionary.Main.takeWhile | avgt | 1 | 5 | 0.190 | ± 0.004 | ms/op |
+
+The results were calculated in [this GHA job][benchmark-gha]
+on 2026-06-05 at 14:00,
+on Linux with 4 CPUs.
 <!-- benchmark_end -->
 
 [biboudis2014]: https://arxiv.org/abs/1406.6631
@@ -47,4 +70,4 @@ Not measured yet, see [the benchmarking job][benchmark-gha].
 [mapmulti]: https://github.com/Nikolas-Charalambidis/java-16-mapmulti-benchmark
 [rosales2023]: https://arxiv.org/abs/2302.10006
 [softwaremill]: https://softwaremill.com/benchmarking-java-streams/
-[benchmark-gha]: https://github.com/objectionary/sabj-25/actions
+[benchmark-gha]: https://github.com/objectionary/sabj-25/actions/runs/27019209233
