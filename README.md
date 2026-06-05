@@ -41,12 +41,13 @@ The benchmarks run on every push to `master`, and the table below
 
 | Benchmark | Mode | Threads | Samples | Score (ms/op) | Error |
 | --- | :---: | ---: | ---: | ---: | ---: |
-| sabj25.Main.scalar | avgt | 1 | 5 | 24.768 | ± 0.863 |
-| sabj25.Main.stateful | avgt | 1 | 5 | 13.189 | ± 0.255 |
-| sabj25.Main.stateless | avgt | 1 | 5 | 15.919 | ± 0.262 |
+| sabj25.Main.classic | avgt | 1 | 5 | 15.711 | ± 0.217 |
+| sabj25.Main.scalar | avgt | 1 | 5 | 24.761 | ± 0.264 |
+| sabj25.Main.stateful | avgt | 1 | 5 | 13.580 | ± 0.198 |
+| sabj25.Main.stateless | avgt | 1 | 5 | 15.679 | ± 0.471 |
 
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-06-05 at 14:55,
+on 2026-06-05 at 15:05,
 on Linux with 4 CPUs.
 <!-- benchmark_end -->
 
