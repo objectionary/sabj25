@@ -3,7 +3,7 @@
 [![benchmark](https://github.com/objectionary/sabj25/actions/workflows/benchmark.yml/badge.svg)](https://github.com/objectionary/sabj25/actions/workflows/benchmark.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/objectionary/sabj25/blob/master/LICENSE.txt)
 
-This repository contains a set of benchmarks for Stream API in Java 25.
+This repository contains a set of benchmarks for [Stream API] in Java 25.
 
 The motivation of this repository is the lack of benchmarks that would
   cover the entire set of terminal and non-terminal methods of
@@ -15,6 +15,7 @@ The benchmarks of [Biboudis et al.][biboudis2014] ([sources][cotl])
   dedicated stream profiler for the JVM, yet they target the runtime
   overhead of `map()`, `filter()`, and `reduce()` rather than the
   breadth of the API.
+
 A few open-source projects on GitHub benchmark streams as well,
   yet each of them stays narrow:
   [keaz/java-stream-benchmark][keaz] measures only `sort()` and
@@ -60,4 +61,5 @@ on Linux with 4 CPUs.
 [mapmulti]: https://github.com/Nikolas-Charalambidis/java-16-mapmulti-benchmark
 [rosales2023]: https://arxiv.org/abs/2302.10006
 [softwaremill]: https://softwaremill.com/benchmarking-java-streams/
-[benchmark-gha]: https://github.com/objectionary/sabj25/actions/runs/27022769426
+[benchmark-gha]: https://github.com/objectionary/sabj25/actions/runs/27022201502
+[Stream API]: https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/stream/package-summary.html
