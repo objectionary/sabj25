@@ -28,6 +28,15 @@ The [SoftwareMill][softwaremill] blog benchmarks a single
 None of them exercise the full set of terminal and intermediate
   methods, let alone their combinations.
 
+## Results
+
+The benchmarks run on every push to `master`, and the table below
+  is regenerated automatically by the CI pipeline:
+
+<!-- benchmark_begin -->
+Not measured yet, see [the benchmarking job][benchmark-gha].
+<!-- benchmark_end -->
+
 [biboudis2014]: https://arxiv.org/abs/1406.6631
 [cotl]: https://github.com/biboudis/clashofthelambdas
 [moller2020]: https://dl.acm.org/doi/abs/10.1145/3428236
@@ -38,3 +47,4 @@ None of them exercise the full set of terminal and intermediate
 [mapmulti]: https://github.com/Nikolas-Charalambidis/java-16-mapmulti-benchmark
 [rosales2023]: https://arxiv.org/abs/2302.10006
 [softwaremill]: https://softwaremill.com/benchmarking-java-streams/
+[benchmark-gha]: https://github.com/objectionary/sabj-25/actions

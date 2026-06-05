@@ -23,23 +23,23 @@ import org.openjdk.jmh.annotations.Warmup;
  */
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Warmup(iterations = 3, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(1)
 public class Main {
 
-    private final int[] numbers = IntStream.rangeClosed(1, 1000).toArray();
+    private final int[] numbers = IntStream.rangeClosed(1, 10_000_000).toArray();
 
     @Benchmark
-    public int sum() {
-        final int sum = Arrays.stream(this.numbers)
+    public long sum() {
+        final long sum = Arrays.stream(this.numbers)
             .filter(number -> number % 2 == 0)
-            .map(number -> number * 2)
+            .mapToLong(number -> number * 2L)
             .sum();
-        if (sum != 501000) {
+        if (sum != 50_000_010_000_000L) {
             throw new IllegalStateException(
-                String.format("the sum %d does not match the expected 501000", sum)
+                String.format("the sum %d does not match the expected 50000010000000", sum)
             );
         }
         return sum;
