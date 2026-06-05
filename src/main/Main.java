@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Objectionary.com
 // SPDX-License-Identifier: MIT
-package com.objectionary;
+package sabj25;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;

@@ -7,11 +7,11 @@ SPDX-License-Identifier: MIT
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.objectionary</groupId>
-  <artifactId>sabj-25</artifactId>
+  <groupId>sabj25</groupId>
+  <artifactId>sabj25</artifactId>
   <version>0.0.1</version>
   <packaging>jar</packaging>
-  <name>sabj-25</name>
+  <name>sabj25</name>
   <description>Stream API Benchmarks for Java 25</description>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -39,6 +39,8 @@ SPDX-License-Identifier: MIT
     </dependency>
   </dependencies>
   <build>
+    <sourceDirectory>src/main</sourceDirectory>
+    <testSourceDirectory>src/test</testSourceDirectory>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

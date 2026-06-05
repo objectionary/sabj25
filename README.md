@@ -1,7 +1,7 @@
 # Stream API Benchmarks for Java 25
 
-[![benchmark](https://github.com/objectionary/sabj-25/actions/workflows/benchmark.yml/badge.svg)](https://github.com/objectionary/sabj-25/actions/workflows/benchmark.yml)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/objectionary/sabj-25/blob/master/LICENSE.txt)
+[![benchmark](https://github.com/objectionary/sabj25/actions/workflows/benchmark.yml/badge.svg)](https://github.com/objectionary/sabj25/actions/workflows/benchmark.yml)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/objectionary/sabj25/blob/master/LICENSE.txt)
 
 This repository contains a set of benchmarks for Stream API in Java 25.
 
@@ -59,4 +59,4 @@ on Linux with 4 CPUs.
 [mapmulti]: https://github.com/Nikolas-Charalambidis/java-16-mapmulti-benchmark
 [rosales2023]: https://arxiv.org/abs/2302.10006
 [softwaremill]: https://softwaremill.com/benchmarking-java-streams/
-[benchmark-gha]: https://github.com/objectionary/sabj-25/actions/runs/27021073192
+[benchmark-gha]: https://github.com/objectionary/sabj25/actions/runs/27021073192
