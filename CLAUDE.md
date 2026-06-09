@@ -15,12 +15,18 @@ Non-standard Maven dirs: `src/main` and `src/test`.
 
 ## Benchmarks
 
-One class `Main`, four `@Benchmark` methods.
-Each runs a `long` pipeline over 1,000,000 numbers.
+One class `Main`, sixteen `@Benchmark` methods.
+Most run a `long` pipeline over 1,000,000 numbers.
 `scalar`: only one-to-one scalar conversions.
 `stateless`: one of every stateless operation.
 `stateful`: operations that must remember state.
 `megamorphic`: many lambdas, megamorphic call sites.
+`fold`: `reduce` and the mutable three-arg `collect`.
+`generated`: `iterate`, `generate`, and `concat` sources.
+`objects`: a reference stream of `Pair` records.
+`fanout`: `flatMap` that expands one element into many.
+`materialize`: `toArray`, `toList`, `count`, `min`, `max`, `forEach`.
+`concurrent`: parallel stateful ops and concurrent collectors.
 Every method ends with `verified(sum, expected)`.
 `verified` throws if the sum drifts from its constant.
 Those constants guard against silent pipeline bugs.
