@@ -2,21 +2,33 @@
 // SPDX-License-Identifier: MIT
 package sabj25;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
+import java.util.PrimitiveIterator;
+import java.util.Random;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
+import java.util.regex.Pattern;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
+import java.util.stream.Gatherer;
 import java.util.stream.Gatherers;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -48,8 +60,15 @@ import org.openjdk.jmh.infra.Blackhole;
  * rather than an array, one that relaxes encounter order so the parallel
  * pipeline may skip ordering, one that harvests the collectors the others leave
  * untouched, one that expands elements through the primitive map-multi variants,
- * and one that measures the fixed overhead of a pipeline over only a handful of
- * elements.
+ * one that builds and composes gatherers of its own rather than the library's,
+ * one that folds through a hand-rolled collector of supplier, accumulator,
+ * combiner, and finisher, one sourced from stream builders, an infinite iterate,
+ * and hand-made spliterators, one that walks the characters, code points,
+ * regular-expression matches, and buffered lines of a block of text, one that
+ * drains a pipeline through its own iterator and spliterator, splitting and
+ * advancing by hand, one fed by seeded pseudorandom int, long, and double
+ * generators, and one that measures the fixed overhead of a pipeline over only a
+ * handful of elements.
  *
  * @since 0.0.1
  */
@@ -66,6 +85,13 @@ public class Main {
     private final List<Long> list = Arrays.stream(this.numbers).boxed().toList();
 
     private final Set<Long> set = Set.copyOf(this.list);
+
+    private final String prose =
+        "the quick brown fox jumps over the lazy dog ".repeat(10_000);
+
+    private final String document = LongStream.rangeClosed(1L, 10_000L)
+        .mapToObj(Long::toString)
+        .collect(Collectors.joining("\n"));
 
     @Benchmark
     public long scalar(final Blackhole blackhole) {
@@ -561,6 +587,241 @@ public class Main {
                 .reduce(0L, Long::sum),
             32L
         );
+    }
+
+    @Benchmark
+    public long forge(final Blackhole blackhole) {
+        final Gatherer<Long, long[], Long> windows = Gatherer.ofSequential(
+            () -> new long[2],
+            Gatherer.Integrator.ofGreedy(
+                (state, number, downstream) -> {
+                    state[0] = state[0] + 1L;
+                    state[1] = state[1] + number;
+                    if (state[0] < 1_000L) {
+                        return true;
+                    }
+                    final long window = state[1];
+                    state[0] = 0L;
+                    state[1] = 0L;
+                    return downstream.push(window);
+                }
+            ),
+            (state, downstream) -> {
+                if (state[0] > 0L) {
+                    downstream.push(state[1]);
+                }
+            }
+        );
+        final Gatherer<Long, Void, Long> growth = Gatherer.of(
+            Gatherer.Integrator.of(
+                (state, number, downstream) -> downstream.push(number * 2L)
+            )
+        );
+        final Gatherer<Long, long[], Long> total = Gatherer.of(
+            () -> new long[1],
+            Gatherer.Integrator.ofGreedy(
+                (state, number, downstream) -> {
+                    state[0] = state[0] + number;
+                    return true;
+                }
+            ),
+            (left, right) -> {
+                left[0] = left[0] + right[0];
+                return left;
+            },
+            (state, downstream) -> downstream.push(state[0])
+        );
+        final long composed = Arrays.stream(this.numbers)
+            .boxed()
+            .peek(blackhole::consume)
+            .gather(windows.andThen(growth))
+            .mapToLong(Long::longValue)
+            .sum();
+        final long summed = Arrays.stream(this.numbers)
+            .parallel()
+            .boxed()
+            .peek(blackhole::consume)
+            .gather(total)
+            .mapToLong(Long::longValue)
+            .sum();
+        return this.verified(composed + summed, 1_500_001_500_000L);
+    }
+
+    @Benchmark
+    public long craft(final Blackhole blackhole) {
+        final long accrued = Arrays.stream(this.numbers)
+            .boxed()
+            .peek(blackhole::consume)
+            .collect(
+                Collector.of(
+                    () -> new long[1],
+                    (box, number) -> box[0] = box[0] + number + 1L,
+                    (left, right) -> {
+                        left[0] = left[0] + right[0];
+                        return left;
+                    },
+                    box -> box[0]
+                )
+            );
+        final long concurrent = Arrays.stream(this.numbers)
+            .parallel()
+            .boxed()
+            .peek(blackhole::consume)
+            .collect(
+                Collector.of(
+                    LongAdder::new,
+                    (adder, number) -> adder.add(number * 2L),
+                    (left, right) -> {
+                        left.add(right.sum());
+                        return left;
+                    },
+                    LongAdder::sum,
+                    Collector.Characteristics.CONCURRENT,
+                    Collector.Characteristics.UNORDERED
+                )
+            );
+        final int identity = Arrays.stream(this.numbers)
+            .limit(500L)
+            .boxed()
+            .collect(
+                Collector.<Long, List<Long>>of(
+                    ArrayList::new,
+                    (kept, number) -> kept.add(number + 1L),
+                    (left, right) -> {
+                        left.addAll(right);
+                        return left;
+                    }
+                )
+            )
+            .size();
+        return this.verified(accrued + concurrent + (long) identity, 1_500_002_500_500L);
+    }
+
+    @Benchmark
+    public long sources(final Blackhole blackhole) {
+        final LongStream.Builder digits = LongStream.builder();
+        LongStream.rangeClosed(1L, 1_000L).forEach(digits::add);
+        final long built = digits.build().map(number -> number + 1L).sum();
+        final Stream.Builder<Long> stock = Stream.builder();
+        LongStream.rangeClosed(1L, 1_000L).boxed().forEach(stock::add);
+        final long boxed = stock.build()
+            .peek(blackhole::consume)
+            .mapToLong(Long::longValue)
+            .sum();
+        final long infinite = Stream.iterate(1L, number -> number + 1L)
+            .limit(1_000L)
+            .peek(blackhole::consume)
+            .mapToLong(Long::longValue)
+            .sum();
+        final long nullable = LongStream.rangeClosed(1L, 1_000L)
+            .boxed()
+            .flatMap(number -> Stream.ofNullable(number % 2L == 0L ? number : null))
+            .peek(blackhole::consume)
+            .mapToLong(Long::longValue)
+            .sum();
+        final long empty = Stream.<Long>empty().mapToLong(Long::longValue).sum();
+        final long supported = StreamSupport.longStream(
+                Spliterators.spliterator(this.numbers, 0, 1_000, Spliterator.ORDERED),
+                false
+            )
+            .map(number -> number + 1L)
+            .sum();
+        final long parallel = StreamSupport.stream(
+                Spliterators.spliterator(this.list, Spliterator.ORDERED),
+                true
+            )
+            .peek(blackhole::consume)
+            .mapToLong(Long::longValue)
+            .sum();
+        return this.verified(
+            built + boxed + infinite + nullable + empty + supported + parallel,
+            500_002_754_500L
+        );
+    }
+
+    @Benchmark
+    public long text(final Blackhole blackhole) throws IOException {
+        final long letters = this.prose.chars()
+            .peek(blackhole::consume)
+            .filter(code -> code != (int) ' ')
+            .count();
+        final long points = this.prose.codePoints()
+            .peek(blackhole::consume)
+            .mapToLong(code -> (long) (code & 0x1F))
+            .sum();
+        final long words = Pattern.compile(" ")
+            .splitAsStream(this.prose)
+            .peek(blackhole::consume)
+            .filter(word -> word.length() > 3)
+            .count();
+        final long spans = Pattern.compile("\\w+")
+            .matcher(this.prose)
+            .results()
+            .peek(blackhole::consume)
+            .mapToLong(match -> (long) (match.end() - match.start()))
+            .sum();
+        final long lines;
+        try (BufferedReader reader = new BufferedReader(new StringReader(this.document))) {
+            lines = reader.lines()
+                .peek(blackhole::consume)
+                .mapToLong(Long::parseLong)
+                .filter(number -> number % 2L == 0L)
+                .sum();
+        }
+        return this.verified(letters + points + words + spans + lines, 30_485_000L);
+    }
+
+    @Benchmark
+    public long traverse() {
+        final long[] pulled = new long[1];
+        final PrimitiveIterator.OfLong iterator = Arrays.stream(this.numbers)
+            .filter(number -> number % 2L == 0L)
+            .map(number -> number + 1L)
+            .iterator();
+        while (iterator.hasNext()) {
+            pulled[0] = pulled[0] + iterator.nextLong();
+        }
+        final long[] advanced = new long[1];
+        final Spliterator.OfLong cursor = Arrays.stream(this.numbers)
+            .map(number -> number * 2L)
+            .spliterator();
+        cursor.tryAdvance((long number) -> advanced[0] = advanced[0] + number);
+        cursor.forEachRemaining((long number) -> advanced[0] = advanced[0] + number);
+        final long[] split = new long[1];
+        final Spliterator.OfLong source = Arrays.stream(this.numbers).spliterator();
+        final Spliterator.OfLong prefix = source.trySplit();
+        if (prefix != null) {
+            prefix.forEachRemaining((long number) -> split[0] = split[0] + number);
+        }
+        source.forEachRemaining((long number) -> split[0] = split[0] + number);
+        final long reduced = Arrays.stream(this.numbers)
+            .filter(number -> number % 7L == 0L)
+            .map(number -> number + 2L)
+            .reduce(Long::sum)
+            .getAsLong();
+        return this.verified(pulled[0] + advanced[0] + split[0] + reduced, 1_821_431_714_285L);
+    }
+
+    @Benchmark
+    public long random() {
+        final long ints = new Random(42L)
+            .ints(500_000L)
+            .asLongStream()
+            .map(number -> number & 0xFFFFL)
+            .sum();
+        final long longs = new Random(1_234L)
+            .longs(500_000L)
+            .map(number -> number & 0xFFFFL)
+            .sum();
+        final long reals = (long) new Random(9_999L)
+            .doubles(500_000L)
+            .map(number -> number * 100.0)
+            .sum();
+        final long bounded = new Random(7L)
+            .ints(500_000L, 0, 1_000)
+            .asLongStream()
+            .sum();
+        return this.verified(ints + longs + reals + bounded, 33_055_453_943L);
     }
 
     private long verified(final long sum, final long expected) {

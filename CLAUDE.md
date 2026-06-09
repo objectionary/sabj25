@@ -15,7 +15,7 @@ Non-standard Maven dirs: `src/main` and `src/test`.
 
 ## Benchmarks
 
-One class `Main`, twenty-two `@Benchmark` methods.
+One class `Main`, twenty-eight `@Benchmark` methods.
 Most run a `long` pipeline over 1,000,000 numbers.
 `scalar`: only one-to-one scalar conversions.
 `stateless`: one of every stateless operation.
@@ -33,6 +33,12 @@ Most run a `long` pipeline over 1,000,000 numbers.
 `harvest`: the remaining collectors (`flatMapping`, `minBy`, etc).
 `spread`: the primitive `mapMultiToInt`/`Long`/`Double` variants.
 `overhead`: fixed pipeline cost over only eight elements.
+`forge`: hand-built gatherers, composed and driven in parallel.
+`craft`: a custom `Collector.of` with explicit characteristics.
+`sources`: stream builders, infinite `iterate`, and spliterators.
+`text`: `chars`, `codePoints`, `splitAsStream`, matches, and lines.
+`traverse`: manual `iterator`, `spliterator`, and one-arg `reduce`.
+`random`: seeded pseudorandom `ints`, `longs`, and `doubles`.
 Every method ends with `verified(sum, expected)`.
 `verified` throws if the sum drifts from its constant.
 Those constants guard against silent pipeline bugs.
