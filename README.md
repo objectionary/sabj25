@@ -32,6 +32,35 @@ The [SoftwareMill][softwaremill] blog benchmarks a single
 None of them exercise the full set of terminal and intermediate
   methods, let alone their combinations.
 
+## Principles
+
+The pipelines are built to measure the Stream API itself, not the
+  cleverness of a particular JIT compiler. They follow a few rules:
+
+- **No incidental repetition.** Where a pipeline sets out to cover the
+  API, each method appears exactly once, so it measures the operation in
+  combination with others rather than a loop of the same call.
+  Repetition shows up only when it is the subject itself, as in
+  `megamorphic`, which repeats `map()` and `filter()` on purpose to turn
+  the call sites megamorphic.
+- **No easy optimization hotspots.** A `Blackhole` observation sits
+  after each boxing stage, because otherwise GraalVM's partial escape
+  analysis scalar-replaces the boxed `Long` and `Double` values and the
+  whole pipeline collapses to almost nothing, measuring elision instead
+  of work.
+- **Lambdas do real arithmetic.** No lambda is an identity function;
+  every element flows through genuine computation at each step.
+- **Every result is verified.** Each pipeline checks its sum against a
+  precomputed constant, so a run that silently skipped work fails loudly
+  rather than reporting a fast but wrong number.
+- **The full API, in combination.** The pipelines span all four stream
+  types, `long`, `int`, `double`, and object, and weave terminal and
+  intermediate methods together, including `flatMap()` and `mapMulti()`.
+- **One concern per pipeline.** `scalar` isolates one-to-one
+  conversions, `stateless` every stateless operation, `stateful` the
+  operations that must remember state, and `megamorphic` the megamorphic
+  call sites.
+
 ## Results
 
 The benchmarks run on every push to `master`, once per JVM, and the
