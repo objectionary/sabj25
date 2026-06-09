@@ -23,13 +23,6 @@ import org.openjdk.jmh.infra.Blackhole;
  * one of repeated map and filter operations whose many lambdas turn the call
  * sites megamorphic.
  *
- * <p>Each {@code @Benchmark} method is a thin instance wrapper that delegates
- * to a {@code private static} method holding the actual stream pipeline. Hone's
- * entry-point rule {@code 111-invokedynamic-to-lambda} only matches a method
- * whose JEO modifiers contain {@code static ↦ Φ.true}; keeping the pipelines in
- * static methods lets the lambda lift start, so the {@code streams/*} fusion
- * actually touches them.</p>
- *
  * @since 0.0.1
  */
 @State(Scope.Thread)
@@ -44,27 +37,8 @@ public class Main {
 
     @Benchmark
     public long scalar(final Blackhole blackhole) {
-        return Main.scalar(this.numbers, blackhole);
-    }
-
-    @Benchmark
-    public long stateless(final Blackhole blackhole) {
-        return Main.stateless(this.numbers, blackhole);
-    }
-
-    @Benchmark
-    public long stateful() {
-        return Main.stateful(this.numbers);
-    }
-
-    @Benchmark
-    public long megamorphic() {
-        return Main.megamorphic(this.numbers);
-    }
-
-    private static long scalar(final long[] numbers, final Blackhole blackhole) {
-        return Main.verified(
-            Arrays.stream(numbers)
+        return this.verified(
+            Arrays.stream(this.numbers)
                 .filter(number -> number % 2L == 0L)
                 .map(number -> number + 1L)
                 .peek(blackhole::consume)
@@ -93,9 +67,10 @@ public class Main {
         );
     }
 
-    private static long stateless(final long[] numbers, final Blackhole blackhole) {
-        return Main.verified(
-            Arrays.stream(numbers)
+    @Benchmark
+    public long stateless(final Blackhole blackhole) {
+        return this.verified(
+            Arrays.stream(this.numbers)
                 .filter(number -> number % 2L == 0L)
                 .map(number -> number + 1L)
                 .peek(blackhole::consume)
@@ -115,9 +90,10 @@ public class Main {
         );
     }
 
-    private static long stateful(final long[] numbers) {
-        return Main.verified(
-            Arrays.stream(numbers)
+    @Benchmark
+    public long stateful() {
+        return this.verified(
+            Arrays.stream(this.numbers)
                 .skip(1_000)
                 .limit(800_000)
                 .sorted()
@@ -129,9 +105,10 @@ public class Main {
         );
     }
 
-    private static long megamorphic(final long[] numbers) {
-        return Main.verified(
-            Arrays.stream(numbers)
+    @Benchmark
+    public long megamorphic() {
+        return this.verified(
+            Arrays.stream(this.numbers)
                 .filter(number -> number % 2L == 0L)
                 .map(number -> number + 3L)
                 .filter(number -> number % 5L != 0L)
@@ -149,7 +126,7 @@ public class Main {
         );
     }
 
-    private static long verified(final long sum, final long expected) {
+    private long verified(final long sum, final long expected) {
         if (sum != expected) {
             throw new IllegalStateException(
                 String.format("the sum %d does not match the expected %d", sum, expected)
