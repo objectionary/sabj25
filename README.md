@@ -70,14 +70,14 @@ The benchmarks run on every push to `master`, once per JVM, and the
 
 | Benchmark | Temurin 25 | Zulu 25 | Corretto 25 | GraalVM 25 |
 | --- | ---: | ---: | ---: | ---: |
-| megamorphic | 15.738 | 16.011 | 16.123 | 9.930 |
-| scalar | 24.975 | 24.821 | 25.718 | 22.474 |
-| stateful | 12.888 | 13.141 | 11.775 | 12.746 |
-| stateless | 15.830 | 15.928 | 15.551 | 0.979 |
+| megamorphic | 17.142 | 17.589 | 15.733 | 15.407 |
+| scalar | 7.380 | 7.344 | 6.999 | 2.974 |
+| stateful | 12.080 | 12.414 | 13.714 | 13.024 |
+| stateless | 14.923 | 15.000 | 13.666 | 3.013 |
 
 All scores are in milliseconds per operation (ms/op); lower is better.
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-06-09 at 11:38.
+on 2026-06-09 at 12:47.
 Each JVM ran on its own GitHub-hosted Linux runner,
 so the scores across columns are indicative, not strictly comparable.
 <!-- benchmark_end -->
@@ -92,5 +92,5 @@ so the scores across columns are indicative, not strictly comparable.
 [mapmulti]: https://github.com/Nikolas-Charalambidis/java-16-mapmulti-benchmark
 [rosales2023]: https://arxiv.org/abs/2302.10006
 [softwaremill]: https://softwaremill.com/benchmarking-java-streams/
-[benchmark-gha]: https://github.com/objectionary/sabj25/actions/runs/27203485090
+[benchmark-gha]: https://github.com/objectionary/sabj25/actions/runs/27207099371
 [Stream API]: https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/stream/package-summary.html
