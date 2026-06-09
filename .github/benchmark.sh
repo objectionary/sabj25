@@ -4,26 +4,68 @@
 
 set -e -o pipefail
 
-csv=target/jmh-result.csv
-if [ ! -s "${csv}" ]; then
-    echo "${csv} is missing or empty, run 'mvn test' first" >&2
+shopt -s nullglob
+dirs=(artifacts/jmh-*/)
+if [ "${#dirs[@]}" -eq 0 ]; then
+    echo 'no benchmark artifacts under artifacts/, did the matrix jobs run' >&2
     exit 1
 fi
+declare -a jvms
+declare -A score
+declare -A seen
+declare -a benches
+col=0
+for dir in "${dirs[@]}"; do
+    csv="${dir}result.csv"
+    label="${dir}name.txt"
+    if [ ! -s "${csv}" ] || [ ! -s "${label}" ]; then
+        echo "skipping ${dir}, result.csv or name.txt is missing" >&2
+        continue
+    fi
+    jvms[col]=$(cat "${label}")
+    while IFS=',' read -r name _mode _threads _samples value _; do
+        bench="${name##*.}"
+        score["${bench}:${col}"]="${value}"
+        if [ -z "${seen[${bench}]:-}" ]; then
+            seen[${bench}]=1
+            benches+=("${bench}")
+        fi
+    done < <(tail -n +2 "${csv}" | tr -d '"')
+    col=$((col + 1))
+done
+if [ "${col}" -eq 0 ]; then
+    echo 'every benchmark artifact was empty, nothing to render' >&2
+    exit 1
+fi
+header='| Benchmark |'
+divider='| --- |'
+for ((i = 0; i < col; i++)); do
+    header+=" ${jvms[i]} |"
+    divider+=' ---: |'
+done
 table=$(
-    echo '| Benchmark | Mode | Threads | Samples | Score (ms/op) | Error |'
-    echo '| --- | :---: | ---: | ---: | ---: | ---: |'
-    tail -n +2 "${csv}" | tr -d '"' | while IFS=',' \
-        read -r name mode threads samples score error _; do
-        printf '| %s | %s | %s | %s | %.3f | ± %.3f |\n' \
-            "${name}" "${mode}" "${threads}" "${samples}" \
-            "${score}" "${error}"
-    done
+    echo "${header}"
+    echo "${divider}"
+    while read -r bench; do
+        row="| ${bench} |"
+        for ((i = 0; i < col; i++)); do
+            value="${score[${bench}:${i}]:-}"
+            if [ -n "${value}" ]; then
+                row+=$(printf ' %.3f |' "${value}")
+            else
+                row+=' — |'
+            fi
+        done
+        echo "${row}"
+    done < <(printf '%s\n' "${benches[@]}" | sort)
 )
 sum=$(
     printf '%s\n\n' "${table}"
+    echo 'All scores are in milliseconds per operation (ms/op); lower is better.'
     echo 'The results were calculated in [this GHA job][benchmark-gha]'
-    echo "on $(date +'%Y-%m-%d') at $(date +'%H:%M'),"
-    echo "on $(uname) with $(getconf _NPROCESSORS_ONLN) CPUs."
+    echo "on $(date +'%Y-%m-%d') at $(date +'%H:%M')."
+    echo 'Each JVM ran on its own GitHub-hosted Linux runner,'
+    echo 'so the scores across columns are indicative, not strictly comparable.'
 )
 export sum
 perl -i -0777 -pe 's/(?<=<!-- benchmark_begin -->).*'\

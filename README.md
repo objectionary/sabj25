@@ -34,21 +34,23 @@ None of them exercise the full set of terminal and intermediate
 
 ## Results
 
-The benchmarks run on every push to `master`, and the table below
-  is regenerated automatically by the CI pipeline:
+The benchmarks run on every push to `master`, once per JVM, and the
+  table below is regenerated automatically by the CI pipeline:
 
 <!-- benchmark_begin -->
 
-| Benchmark | Mode | Threads | Samples | Score (ms/op) | Error |
-| --- | :---: | ---: | ---: | ---: | ---: |
-| sabj25.Main.megamorphic | avgt | 1 | 5 | 15.755 | ± 0.156 |
-| sabj25.Main.scalar | avgt | 1 | 5 | 25.043 | ± 0.343 |
-| sabj25.Main.stateful | avgt | 1 | 5 | 13.559 | ± 0.292 |
-| sabj25.Main.stateless | avgt | 1 | 5 | 15.783 | ± 0.375 |
+| Benchmark | Temurin 25 | Zulu 25 | Corretto 25 | GraalVM 25 |
+| --- | ---: | ---: | ---: | ---: |
+| megamorphic | 15.755 | — | — | — |
+| scalar | 25.043 | — | — | — |
+| stateful | 13.559 | — | — | — |
+| stateless | 15.783 | — | — | — |
 
+All scores are in milliseconds per operation (ms/op); lower is better.
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-06-05 at 18:10,
-on Linux with 4 CPUs.
+on 2026-06-05 at 18:10.
+Each JVM ran on its own GitHub-hosted Linux runner,
+so the scores across columns are indicative, not strictly comparable.
 <!-- benchmark_end -->
 
 [biboudis2014]: https://arxiv.org/abs/1406.6631
