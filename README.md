@@ -86,15 +86,20 @@ The benchmarks run on every push to `master`, once per JVM, and the
 
 | Benchmark | Temurin 25 | Zulu 25 | Corretto 25 | GraalVM 25 | Oracle 25 | Semeru 25 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `longlar` | 14.532 | 14.308 | 11.065 | 6.558 | 16.158 | 14.605 |
-| `megamorphic` | 17.306 | 16.030 | 16.007 | 9.723 | 17.373 | 14.230 |
-| `scalar` | 7.438 | 7.144 | 6.708 | 3.036 | 7.320 | 11.524 |
-| `stateful` | 12.134 | 13.336 | 11.616 | 12.357 | 12.104 | 24.412 |
-| `stateless` | 14.861 | 13.822 | 14.577 | 2.919 | 14.838 | 23.691 |
+| `collectors` | 45.458 | 46.331 | 45.627 | 36.620 | 46.204 | 48.225 |
+| `gatherer` | 21.079 | 21.626 | 21.599 | 20.331 | 21.884 | 38.615 |
+| `longlar` | 11.398 | 14.484 | 14.686 | 6.496 | 13.976 | 11.787 |
+| `megamorphic` | 15.890 | 17.353 | 17.065 | 9.910 | 17.431 | 14.558 |
+| `parallel` | 6.433 | 6.343 | 6.351 | 3.066 | 6.338 | 51.686 |
+| `reduction` | 1.763 | 1.560 | 1.563 | 1.904 | 1.563 | 2.962 |
+| `scalar` | 7.035 | 7.319 | 7.323 | 2.993 | 7.317 | 13.575 |
+| `shortcircuit` | 22.531 | 24.213 | 23.460 | 8.665 | 24.283 | 39.816 |
+| `stateful` | 13.237 | 12.973 | 12.205 | 12.850 | 13.035 | 23.996 |
+| `stateless` | 13.885 | 14.984 | 14.983 | 3.030 | 14.859 | 23.507 |
 
 All scores are in milliseconds per operation (ms/op); lower is better.
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-06-09 at 14:33.
+on 2026-06-09 at 16:58.
 Each JVM ran on its own GitHub-hosted Linux runner,
 so the scores across columns are indicative, not strictly comparable.
 <!-- benchmark_end -->
@@ -109,6 +114,6 @@ so the scores across columns are indicative, not strictly comparable.
 [mapmulti]: https://github.com/Nikolas-Charalambidis/java-16-mapmulti-benchmark
 [rosales2023]: https://arxiv.org/abs/2302.10006
 [softwaremill]: https://softwaremill.com/benchmarking-java-streams/
-[benchmark-gha]: https://github.com/objectionary/sabj25/actions/runs/27212702833
+[benchmark-gha]: https://github.com/objectionary/sabj25/actions/runs/27222140016
 [jmh]: https://github.com/openjdk/jmh
 [Stream API]: https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/stream/package-summary.html
