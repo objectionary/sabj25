@@ -81,6 +81,7 @@ public class Main {
                 .mapMulti((number, sink) -> sink.accept(number))
                 .boxed()
                 .mapToLong(Long::longValue)
+                .peek(blackhole::consume)
                 .asDoubleStream()
                 .mapToObj(Double::valueOf)
                 .mapToInt(Double::intValue)
