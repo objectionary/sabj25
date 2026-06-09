@@ -18,10 +18,11 @@ import org.openjdk.jmh.infra.Blackhole;
 
 /**
  * Benchmarks of long stream pipelines over an array of one million numbers:
- * one of only scalar, one-to-one conversions, one of every stateless
- * operation, one of the stateful operations that must remember state, and
- * one of repeated map and filter operations whose many lambdas turn the call
- * sites megamorphic.
+ * one of only scalar, one-to-one conversions, one like it that stays with
+ * primitive longs to avoid all boxing, one of every stateless operation, one
+ * of the stateful operations that must remember state, and one of repeated
+ * map and filter operations whose many lambdas turn the call sites
+ * megamorphic.
  *
  * @since 0.0.1
  */
@@ -52,6 +53,22 @@ public class Main {
                 .mapToLong(value -> (long) value + 7L)
                 .sum(),
             750_004_500_000L
+        );
+    }
+
+    @Benchmark
+    public long longlar(final Blackhole blackhole) {
+        return this.verified(
+            Arrays.stream(this.numbers)
+                .filter(number -> number % 2L == 0L)
+                .map(number -> number + 7L)
+                .peek(blackhole::consume)
+                .map(number -> number * 2L)
+                .map(number -> number - 1L)
+                .peek(blackhole::consume)
+                .map(number -> number + 4L)
+                .sum(),
+            500_009_500_000L
         );
     }
 
