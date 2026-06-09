@@ -63,8 +63,24 @@ The pipelines are built to measure the Stream API itself, not the
 
 ## Results
 
+The numbers come from [JMH][jmh] 1.37, the Java Microbenchmark Harness,
+  driven from a JUnit test that builds the `Options` and runs the `Runner`
+  programmatically rather than from the command line.
+Every method is measured in `AverageTime` mode and reported in
+  milliseconds per operation (`ms/op`), so each score is the mean wall-clock
+  time of a single invocation of one `@Benchmark` method.
+Each benchmark runs in one fork (a freshly started JVM), with three
+  warmup iterations of one second each to let the JIT compiler settle,
+  followed by five measurement iterations of one second each; the reported
+  score is the arithmetic mean of those five measurement iterations.
+The state is thread-scoped and the harness is single-threaded, so no
+  contention or cross-thread effects enter the timings, and a `Blackhole`
+  consumes intermediate values to stop the JIT from eliminating the pipeline
+  as dead code.
+JMH writes the raw results to `target/jmh-result.csv`, which the CI
+  pipeline parses into the table below.
 The benchmarks run on every push to `master`, once per JVM, and the
-  table below is regenerated automatically by the CI pipeline:
+  table is regenerated automatically:
 
 <!-- benchmark_begin -->
 
@@ -93,5 +109,6 @@ so the scores across columns are indicative, not strictly comparable.
 [mapmulti]: https://github.com/Nikolas-Charalambidis/java-16-mapmulti-benchmark
 [rosales2023]: https://arxiv.org/abs/2302.10006
 [softwaremill]: https://softwaremill.com/benchmarking-java-streams/
-[benchmark-gha]: https://github.com/objectionary/sabj25/actions/runs/27213476235
+[benchmark-gha]: https://github.com/objectionary/sabj25/actions/runs/27212702833
+[jmh]: https://github.com/openjdk/jmh
 [Stream API]: https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/stream/package-summary.html
