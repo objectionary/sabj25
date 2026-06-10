@@ -91,35 +91,29 @@ The benchmarks run on every push to `master`, once per JVM, and the
 
 | Benchmark | Temurin 25 | Zulu 25 | Corretto 25 | GraalVM 25 | Oracle 25 | Semeru 25 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `collection` | 15.863 | 11.762 | 15.793 | 7.626 | 16.232 | 23.195 |
-| `collectors` | 170.269 | 132.419 | 170.478 | 124.695 | 167.776 | 238.377 |
-| `comparators` | 5.150 | 3.958 | 5.179 | 5.741 | 5.219 | 7.952 |
-| `concurrent` | 207.712 | 169.605 | 205.420 | 208.381 | 208.284 | 297.710 |
-| `craft` | 11.734 | 9.488 | 11.383 | 22.228 | 12.246 | 68.365 |
-| `fanout` | 84.761 | 60.899 | 84.032 | 37.174 | 87.785 | 157.002 |
-| `fold` | 31.838 | 24.051 | 33.241 | 24.281 | 32.333 | 154.170 |
-| `forge` | 16.863 | 12.781 | 16.448 | 18.217 | 16.332 | 63.100 |
-| `gatherer` | 22.107 | 17.318 | 22.442 | 22.678 | 22.389 | 42.646 |
-| `generated` | 9.184 | 7.044 | 9.153 | 9.173 | 9.159 | 15.001 |
-| `longlar` | 29.327 | 22.637 | 28.639 | 33.072 | 29.653 | 25.060 |
-| `materialize` | 155.976 | 118.425 | 142.117 | 88.620 | 157.449 | 171.187 |
-| `megamorphic` | 17.022 | 13.651 | 17.008 | 20.874 | 17.293 | 23.667 |
-| `nested` | 56.968 | 45.560 | 57.446 | 41.440 | 56.536 | 80.636 |
-| `numerics` | 44.196 | 34.400 | 44.384 | 52.466 | 44.874 | 193.574 |
-| `objects` | 68.275 | 53.771 | 66.920 | 66.970 | 68.438 | 84.042 |
-| `ordered` | 98.572 | 73.759 | 101.658 | 20.304 | 97.040 | 96.457 |
+| `collection` | 58.645 | 61.339 | 47.530 | 33.846 | 48.512 | 62.586 |
+| `collectors` | 261.320 | 263.326 | 208.217 | 205.265 | 208.035 | 341.141 |
+| `concurrent` | 192.124 | 211.101 | 157.141 | 197.214 | 160.368 | 301.954 |
+| `fanout` | 84.482 | 78.208 | 61.718 | 37.357 | 67.944 | 153.254 |
+| `fold` | 31.473 | 31.258 | 24.709 | 25.292 | 25.232 | 150.247 |
+| `forge` | 43.283 | 44.351 | 36.906 | 38.953 | 35.005 | 150.965 |
+| `gatherer` | 20.266 | 21.858 | 17.393 | 20.846 | 17.324 | 42.912 |
+| `longlar` | 26.144 | 29.192 | 22.488 | 22.560 | 23.121 | 23.348 |
+| `materialize` | 143.173 | 154.848 | 118.148 | 86.677 | 120.747 | 153.090 |
+| `megamorphic` | 15.981 | 17.297 | 13.652 | 15.868 | 13.954 | 21.985 |
+| `numerics` | 41.713 | 42.062 | 34.576 | 52.980 | 33.042 | 194.859 |
+| `objects` | 85.269 | 89.492 | 69.396 | 77.912 | 68.730 | 106.998 |
+| `ordered` | 85.902 | 88.728 | 72.004 | 18.050 | 69.282 | 104.497 |
 | `overhead` | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.001 |
-| `random` | 15.555 | 12.047 | 15.540 | 15.517 | 15.524 | 19.386 |
-| `scalar` | 11.055 | 8.255 | 11.087 | 12.729 | 11.030 | 22.736 |
-| `sources` | 5.554 | 4.328 | 5.536 | 7.517 | 5.573 | 36.122 |
-| `stateful` | 14.290 | 10.679 | 14.223 | 16.298 | 14.267 | 28.496 |
-| `stateless` | 16.290 | 12.843 | 16.270 | 12.982 | 16.541 | 28.777 |
-| `text` | 10.187 | 7.457 | 10.336 | 14.633 | 10.408 | 15.733 |
-| `unordered` | 20.481 | 14.975 | 19.462 | 18.560 | 20.007 | 28.110 |
+| `random` | 14.077 | 15.541 | 12.052 | 15.872 | 12.043 | 18.718 |
+| `sources` | 19.305 | 19.760 | 15.733 | 22.628 | 15.612 | 69.530 |
+| `stateful` | 14.533 | 13.826 | 11.050 | 14.809 | 10.576 | 26.047 |
+| `stateless` | 15.095 | 17.004 | 12.732 | 12.493 | 12.779 | 27.890 |
+| `text` | 9.633 | 10.209 | 7.499 | 14.978 | 7.751 | 16.925 |
 
 All scores are in milliseconds per operation (ms/op); lower is better.
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-06-10 at 04:52.
+on 2026-06-10 at 09:16.
 Each JVM ran on its own GitHub-hosted Linux runner,
 so the scores across columns are indicative, not strictly comparable.
 <!-- benchmark_end -->
@@ -134,6 +128,6 @@ so the scores across columns are indicative, not strictly comparable.
 [mapmulti]: https://github.com/Nikolas-Charalambidis/java-16-mapmulti-benchmark
 [rosales2023]: https://arxiv.org/abs/2302.10006
 [softwaremill]: https://softwaremill.com/benchmarking-java-streams/
-[benchmark-gha]: https://github.com/objectionary/sabj25/actions/runs/27253618638
+[benchmark-gha]: https://github.com/objectionary/sabj25/actions/runs/27265661261
 [jmh]: https://github.com/openjdk/jmh
 [Stream API]: https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/stream/package-summary.html
