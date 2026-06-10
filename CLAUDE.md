@@ -15,33 +15,31 @@ Non-standard Maven dirs: `src/main` and `src/test`.
 
 ## Benchmarks
 
-One class `Main`, thirty-three `@Benchmark` methods.
+One class `Main`, twenty-five `@Benchmark` methods.
 Most run a `long` pipeline over 1,000,000 numbers.
 `scalar`: only one-to-one scalar conversions.
+`longlar`: the same chain in primitive longs, sequential then parallel.
 `stateless`: one of every stateless operation.
 `stateful`: operations that must remember state.
 `megamorphic`: many lambdas, megamorphic call sites.
-`fold`: `reduce` and the mutable three-arg `collect`.
-`combine`: those same three-arg combiners run in parallel.
+`gatherer`: the Java 25 `Gatherers` (window, scan, fold, `mapConcurrent`).
+`collectors`: composed teeing/grouping/partitioning plus the remaining collectors.
+`fold`: `reduce` and the mutable three-arg `collect`, sequential and parallel.
 `generated`: `iterate`, `generate`, and `concat` sources.
 `objects`: a reference stream of `Pair` records.
-`fanout`: `flatMap` that expands one element into many.
-`materialize`: `toArray`, `toList`, `count`, `min`, `max`, `forEach`.
+`fanout`: `flatMap` and the primitive `mapMulti` variants that expand one into many.
+`materialize`: `toArray`/`toList`/`count`/`min`/`max`/`forEach` plus manual iterator and spliterator.
 `concurrent`: parallel stateful ops and concurrent collectors.
 `collection`: a `List` and a `Set` source instead of an array.
 `unordered`: `unordered` and `sequential` toggles in parallel.
-`harvest`: the remaining collectors (`flatMapping`, `minBy`, etc).
-`spread`: the primitive `mapMultiToInt`/`Long`/`Double` variants.
 `overhead`: fixed pipeline cost over only eight elements.
 `forge`: hand-built gatherers, composed and driven in parallel.
 `craft`: a custom `Collector.of` with explicit characteristics.
 `sources`: stream builders, infinite `iterate`, and spliterators.
 `text`: `chars`, `codePoints`, `splitAsStream`, matches, and lines.
-`traverse`: manual `iterator`, `spliterator`, and one-arg `reduce`.
 `random`: seeded pseudorandom `ints`, `longs`, and `doubles`.
-`ints`: an `int[]` source kept primitive through `IntStream` and its summary.
-`reals`: a `double[]` source through `DoubleStream`, averaging and summing.
-`ordered`: parallel order-sensitive slicing and short-circuiting terminals.
+`numerics`: `IntStream`, `DoubleStream`, and `LongStream` summary statistics.
+`ordered`: parallel order-sensitive slicing and short-circuiting match/find terminals.
 `nested`: collectors nested in collectors, through tree and linked maps.
 `comparators`: composed comparators, `thenComparing`, and `joining`.
 Every method ends with `verified(sum, expected)`.
