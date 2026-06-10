@@ -46,34 +46,33 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 /**
- * Benchmarks of long stream pipelines over an array of one million numbers:
- * one that stays with primitive longs to avoid all boxing and drives that
- * same chain across the fork-join pool, one of every stateless operation
- * including all the scalar one-to-one conversions, one of the stateful
- * operations that must remember state, one of repeated map and filter
- * operations whose many lambdas turn the call sites megamorphic, one of the
- * Java 25 gatherers, one that collects through composed teeing, grouping,
- * and partitioning collectors, nests collectors inside collectors through
- * tree and linked maps, and then harvests the collectors the others leave
- * untouched, one of the general reduction terminals reduce and mutable
- * collect run both sequentially and across the fork-join pool, one over a
- * reference stream of records sorted through composed comparators and joined
- * into text, one that expands every element through fan-out flat-maps and
- * the primitive map-multi variants, one of the materializing terminals that
- * also drains a pipeline through its own iterator and spliterator, one that
- * runs stateful operations and concurrent collectors across the fork-join
- * pool, one sourced from a list and a set rather than an array that also
- * relaxes encounter order so the parallel pipeline may skip ordering, one
- * that measures the fixed overhead of a pipeline over only a handful of
- * elements, one that builds and composes gatherers of its own rather than
- * the library's and folds through a hand-rolled collector of supplier,
- * accumulator, combiner, and finisher, one sourced from stream builders,
- * generators, concatenation, an infinite iterate, and hand-made
- * spliterators, one that walks the characters, code points,
- * regular-expression matches, and buffered lines of a block of text, one fed
- * by seeded pseudorandom int, long, and double generators, one rooted in
- * primitive int, double, and long streams gathered into summary statistics
- * with boxed round-trips and averaging, and one that drives the
+ * Benchmarks of long stream pipelines over an array of one million numbers,
+ * one per facet of the Stream API: one of every stateless operation,
+ * including all the scalar one-to-one conversions, that also drives a
+ * primitive long chain sequentially and across the fork-join pool and
+ * repeats map and filter through enough distinct lambdas to turn the call
+ * sites megamorphic, one of the stateful operations that must remember
+ * state, one of the Java 25 gatherers together with gatherers built and
+ * composed by hand and a hand-rolled collector of supplier, accumulator,
+ * combiner, and finisher, one that collects through composed teeing,
+ * grouping, and partitioning collectors, nests collectors inside collectors
+ * through tree and linked maps, harvests the collectors the others leave
+ * untouched, and sorts a reference stream of records through composed
+ * comparators into joined text, one of the general reduction terminals
+ * reduce and mutable collect run both sequentially and across the fork-join
+ * pool together with the primitive int, double, and long streams gathered
+ * into summary statistics with boxed round-trips and averaging, one that
+ * expands every element through fan-out flat-maps and the primitive
+ * map-multi variants, one of the materializing terminals that also drains a
+ * pipeline through its own iterator and spliterator, one that runs stateful
+ * operations and concurrent collectors across the fork-join pool, one that
+ * measures the fixed overhead of a pipeline over only a handful of
+ * elements, one sourced from stream builders, generators, concatenation, an
+ * infinite iterate, hand-made spliterators, seeded pseudorandom int, long,
+ * and double generators, and a list and a set rather than an array that
+ * also relaxes encounter order so the parallel pipeline may skip ordering,
+ * one that walks the characters, code points, regular-expression matches,
+ * and buffered lines of a block of text, and one that drives the
  * order-sensitive slicing and short-circuiting matching and finding
  * terminals across the fork-join pool.
  *
@@ -106,7 +105,7 @@ public class Main {
         .collect(Collectors.joining("\n"));
 
     @Benchmark
-    public long longlar(final Blackhole blackhole) {
+    public long stateless(final Blackhole blackhole) {
         final long sequential = Arrays.stream(this.numbers)
             .filter(number -> number % 2L == 0L)
             .map(number -> number + 7L)
@@ -126,28 +125,38 @@ public class Main {
             .peek(blackhole::consume)
             .map(number -> number + 4L)
             .sum();
-        return this.verified(sequential + parallel, 1_000_019_000_000L);
-    }
-
-    @Benchmark
-    public long stateless(final Blackhole blackhole) {
+        final long scalars = Arrays.stream(this.numbers)
+            .filter(number -> number % 2L == 0L)
+            .map(number -> number + 5L)
+            .flatMap(number -> LongStream.of(number - 3L))
+            .mapMulti((number, sink) -> sink.accept(number + 2L))
+            .asDoubleStream()
+            .mapToObj(value -> Double.valueOf(value * 2.0))
+            .peek(blackhole::consume)
+            .mapToInt(value -> (int) (value / 2.0))
+            .asLongStream()
+            .boxed()
+            .peek(blackhole::consume)
+            .mapToDouble(value -> value - 1.5)
+            .mapToLong(value -> (long) value + 4L)
+            .sum();
+        final long lambdas = Arrays.stream(this.numbers)
+            .filter(number -> number % 2L == 0L)
+            .map(number -> number + 3L)
+            .filter(number -> number % 5L != 0L)
+            .map(number -> number * 2L)
+            .filter(number -> number > 100L)
+            .map(number -> number - 7L)
+            .filter(number -> number % 3L != 0L)
+            .map(number -> number + 11L)
+            .filter(number -> number < 1_900_000L)
+            .map(number -> number / 2L)
+            .filter(number -> number % 7L != 0L)
+            .map(number -> number + 1L)
+            .sum();
         return this.verified(
-            Arrays.stream(this.numbers)
-                .filter(number -> number % 2L == 0L)
-                .map(number -> number + 5L)
-                .flatMap(number -> LongStream.of(number - 3L))
-                .mapMulti((number, sink) -> sink.accept(number + 2L))
-                .asDoubleStream()
-                .mapToObj(value -> Double.valueOf(value * 2.0))
-                .peek(blackhole::consume)
-                .mapToInt(value -> (int) (value / 2.0))
-                .asLongStream()
-                .boxed()
-                .peek(blackhole::consume)
-                .mapToDouble(value -> value - 1.5)
-                .mapToLong(value -> (long) value + 4L)
-                .sum(),
-            250_003_500_000L
+            sequential + parallel + scalars + lambdas,
+            1_353_165_329_694L
         );
     }
 
@@ -167,47 +176,125 @@ public class Main {
     }
 
     @Benchmark
-    public long megamorphic() {
+    public long gatherers(final Blackhole blackhole) {
+        final long library = Arrays.stream(this.numbers)
+            .boxed()
+            .gather(Gatherers.windowFixed(100))
+            .gather(Gatherers.mapConcurrent(8, window -> window.stream().mapToLong(Long::longValue).sum()))
+            .peek(blackhole::consume)
+            .gather(Gatherers.scan(() -> 0L, Long::sum))
+            .gather(Gatherers.windowSliding(2))
+            .map(window -> window.getLast() - window.getFirst())
+            .peek(blackhole::consume)
+            .gather(Gatherers.fold(() -> 0L, Long::sum))
+            .mapToLong(Long::longValue)
+            .sum();
+        final Gatherer<Long, long[], Long> windows = Gatherer.ofSequential(
+            () -> new long[2],
+            Gatherer.Integrator.ofGreedy(
+                (state, number, downstream) -> {
+                    state[0] = state[0] + 1L;
+                    state[1] = state[1] + number;
+                    if (state[0] < 1_000L) {
+                        return true;
+                    }
+                    final long window = state[1];
+                    state[0] = 0L;
+                    state[1] = 0L;
+                    return downstream.push(window);
+                }
+            ),
+            (state, downstream) -> {
+                if (state[0] > 0L) {
+                    downstream.push(state[1]);
+                }
+            }
+        );
+        final Gatherer<Long, Void, Long> growth = Gatherer.of(
+            Gatherer.Integrator.of(
+                (state, number, downstream) -> downstream.push(number * 2L)
+            )
+        );
+        final Gatherer<Long, long[], Long> total = Gatherer.of(
+            () -> new long[1],
+            Gatherer.Integrator.ofGreedy(
+                (state, number, downstream) -> {
+                    state[0] = state[0] + number;
+                    return true;
+                }
+            ),
+            (left, right) -> {
+                left[0] = left[0] + right[0];
+                return left;
+            },
+            (state, downstream) -> downstream.push(state[0])
+        );
+        final long composed = Arrays.stream(this.numbers)
+            .boxed()
+            .peek(blackhole::consume)
+            .gather(windows.andThen(growth))
+            .mapToLong(Long::longValue)
+            .sum();
+        final long summed = Arrays.stream(this.numbers)
+            .parallel()
+            .boxed()
+            .peek(blackhole::consume)
+            .gather(total)
+            .mapToLong(Long::longValue)
+            .sum();
+        final long accrued = Arrays.stream(this.numbers)
+            .boxed()
+            .peek(blackhole::consume)
+            .collect(
+                Collector.of(
+                    () -> new long[1],
+                    (box, number) -> box[0] = box[0] + number + 1L,
+                    (left, right) -> {
+                        left[0] = left[0] + right[0];
+                        return left;
+                    },
+                    box -> box[0]
+                )
+            );
+        final long concurrent = Arrays.stream(this.numbers)
+            .parallel()
+            .boxed()
+            .peek(blackhole::consume)
+            .collect(
+                Collector.of(
+                    LongAdder::new,
+                    (adder, number) -> adder.add(number * 2L),
+                    (left, right) -> {
+                        left.add(right.sum());
+                        return left;
+                    },
+                    LongAdder::sum,
+                    Collector.Characteristics.CONCURRENT,
+                    Collector.Characteristics.UNORDERED
+                )
+            );
+        final int identity = Arrays.stream(this.numbers)
+            .limit(500L)
+            .boxed()
+            .collect(
+                Collector.<Long, List<Long>>of(
+                    ArrayList::new,
+                    (kept, number) -> kept.add(number + 1L),
+                    (left, right) -> {
+                        left.addAll(right);
+                        return left;
+                    }
+                )
+            )
+            .size();
         return this.verified(
-            Arrays.stream(this.numbers)
-                .filter(number -> number % 2L == 0L)
-                .map(number -> number + 3L)
-                .filter(number -> number % 5L != 0L)
-                .map(number -> number * 2L)
-                .filter(number -> number > 100L)
-                .map(number -> number - 7L)
-                .filter(number -> number % 3L != 0L)
-                .map(number -> number + 11L)
-                .filter(number -> number < 1_900_000L)
-                .map(number -> number / 2L)
-                .filter(number -> number % 7L != 0L)
-                .map(number -> number + 1L)
-                .sum(),
-            103_142_829_694L
+            library + composed + summed + accrued + concurrent + (long) identity,
+            3_500_004_495_450L
         );
     }
 
     @Benchmark
-    public long gatherer(final Blackhole blackhole) {
-        return this.verified(
-            Arrays.stream(this.numbers)
-                .boxed()
-                .gather(Gatherers.windowFixed(100))
-                .gather(Gatherers.mapConcurrent(8, window -> window.stream().mapToLong(Long::longValue).sum()))
-                .peek(blackhole::consume)
-                .gather(Gatherers.scan(() -> 0L, Long::sum))
-                .gather(Gatherers.windowSliding(2))
-                .map(window -> window.getLast() - window.getFirst())
-                .peek(blackhole::consume)
-                .gather(Gatherers.fold(() -> 0L, Long::sum))
-                .mapToLong(Long::longValue)
-                .sum(),
-            500_000_494_950L
-        );
-    }
-
-    @Benchmark
-    public long collectors() {
+    public long collectors(final Blackhole blackhole) {
         final long teed = Arrays.stream(this.numbers)
             .boxed()
             .sorted(Comparator.reverseOrder())
@@ -297,50 +384,7 @@ public class Main {
             .limit(10_000L)
             .boxed()
             .collect(Collectors.toUnmodifiableMap(number -> number, number -> number * 2L));
-        return this.verified(
-            teed
-                + mapped.values().stream().mapToLong(Long::longValue).sum()
-                + stats.getSum()
-                + (long) average
-                + smallest + largest
-                + residues.stream().mapToLong(Long::longValue).sum()
-                + (long) listed.size()
-                + grouped.values().stream()
-                    .flatMap(inner -> inner.values().stream())
-                    .mapToLong(Long::longValue).sum()
-                + counted.values().stream().mapToLong(Long::longValue).sum()
-                + merged.values().stream().mapToLong(Long::longValue).sum()
-                + immutable.values().stream().mapToLong(Long::longValue).sum(),
-            2_500_157_520_442L
-        );
-    }
-
-    @Benchmark
-    public long fold(final Blackhole blackhole) {
-        final long reduced = Arrays.stream(this.numbers)
-            .filter(number -> number % 2L == 0L)
-            .map(number -> number * 3L - 1L)
-            .reduce(0L, Long::sum);
-        final long combined = Arrays.stream(this.numbers)
-            .boxed()
-            .peek(blackhole::consume)
-            .reduce(0L, (total, number) -> total + number - 1L, Long::sum);
-        final long collected = Arrays.stream(this.numbers)
-            .collect(() -> new long[1], (box, number) -> box[0] += number + 3L, (left, right) -> left[0] += right[0])[0];
-        final long pooled = Arrays.stream(this.numbers)
-            .parallel()
-            .boxed()
-            .peek(blackhole::consume)
-            .reduce(0L, (total, number) -> total + number - 1L, Long::sum);
-        final long gathered = Arrays.stream(this.numbers)
-            .parallel()
-            .collect(() -> new long[1], (box, number) -> box[0] += number + 3L, (left, right) -> left[0] += right[0])[0];
-        return this.verified(reduced + combined + collected + pooled + gathered, 2_750_007_000_000L);
-    }
-
-    @Benchmark
-    public long objects(final Blackhole blackhole) {
-        final Map<Long, Long> grouped = Arrays.stream(this.numbers)
+        final Map<Long, Long> paired = Arrays.stream(this.numbers)
             .mapToObj(number -> new Pair(number, number % 8L))
             .peek(blackhole::consume)
             .sorted(Comparator.comparingLong(Pair::head).reversed())
@@ -376,15 +420,102 @@ public class Main {
             .sorted(Comparator.<Long>naturalOrder().reversed())
             .map(number -> number.toString())
             .collect(Collectors.joining(",", "[", "]"));
-        final List<Long> listed = Arrays.stream(this.numbers)
+        final List<Long> reversed = Arrays.stream(this.numbers)
             .limit(500L)
             .boxed()
             .sorted(Comparator.reverseOrder())
             .collect(Collectors.toUnmodifiableList());
         return this.verified(
-            grouped.values().stream().mapToLong(Long::longValue).sum() + reduced + joined
-                + ranked + (long) wrapped.length() + (long) listed.size(),
-            1_000_077_033_285L
+            teed
+                + mapped.values().stream().mapToLong(Long::longValue).sum()
+                + stats.getSum()
+                + (long) average
+                + smallest + largest
+                + residues.stream().mapToLong(Long::longValue).sum()
+                + (long) listed.size()
+                + grouped.values().stream()
+                    .flatMap(inner -> inner.values().stream())
+                    .mapToLong(Long::longValue).sum()
+                + counted.values().stream().mapToLong(Long::longValue).sum()
+                + merged.values().stream().mapToLong(Long::longValue).sum()
+                + immutable.values().stream().mapToLong(Long::longValue).sum()
+                + paired.values().stream().mapToLong(Long::longValue).sum()
+                + reduced + joined + ranked
+                + (long) wrapped.length() + (long) reversed.size(),
+            3_500_234_553_727L
+        );
+    }
+
+    @Benchmark
+    public long fold(final Blackhole blackhole) {
+        final long reduced = Arrays.stream(this.numbers)
+            .filter(number -> number % 2L == 0L)
+            .map(number -> number * 3L - 1L)
+            .reduce(0L, Long::sum);
+        final long combined = Arrays.stream(this.numbers)
+            .boxed()
+            .peek(blackhole::consume)
+            .reduce(0L, (total, number) -> total + number - 1L, Long::sum);
+        final long collected = Arrays.stream(this.numbers)
+            .collect(() -> new long[1], (box, number) -> box[0] += number + 3L, (left, right) -> left[0] += right[0])[0];
+        final long pooled = Arrays.stream(this.numbers)
+            .parallel()
+            .boxed()
+            .peek(blackhole::consume)
+            .reduce(0L, (total, number) -> total + number - 1L, Long::sum);
+        final long gathered = Arrays.stream(this.numbers)
+            .parallel()
+            .collect(() -> new long[1], (box, number) -> box[0] += number + 3L, (left, right) -> left[0] += right[0])[0];
+        final IntSummaryStatistics whole = Arrays.stream(this.integers)
+            .filter(number -> number % 2 == 0)
+            .map(number -> number + 3)
+            .summaryStatistics();
+        final long wholeBoxed = Arrays.stream(this.integers)
+            .limit(200_000)
+            .boxed()
+            .peek(blackhole::consume)
+            .mapToInt(Integer::intValue)
+            .asLongStream()
+            .map(number -> number * 2L)
+            .sum();
+        final double mean = Arrays.stream(this.integers)
+            .map(number -> number % 1_000)
+            .average()
+            .getAsDouble();
+        final DoubleSummaryStatistics real = Arrays.stream(this.decimals)
+            .filter(number -> number % 2.0 == 0.0)
+            .map(number -> number + 1.0)
+            .summaryStatistics();
+        final double realBoxed = Arrays.stream(this.decimals)
+            .limit(200_000)
+            .boxed()
+            .peek(blackhole::consume)
+            .mapToDouble(Double::doubleValue)
+            .map(number -> number * 2.0)
+            .sum();
+        final double averaged = Arrays.stream(this.decimals)
+            .boxed()
+            .peek(blackhole::consume)
+            .collect(Collectors.averagingDouble(number -> number));
+        final double summed = Arrays.stream(this.decimals)
+            .boxed()
+            .peek(blackhole::consume)
+            .collect(Collectors.summingDouble(number -> number));
+        final LongSummaryStatistics counted = Arrays.stream(this.numbers)
+            .filter(number -> number % 3L != 0L)
+            .map(number -> number * 2L - 1L)
+            .summaryStatistics();
+        return this.verified(
+            reduced + combined + collected + pooled + gathered
+                + whole.getSum() + (long) whole.getMax() + (long) whole.getMin()
+                + whole.getCount() + (long) whole.getAverage()
+                + wholeBoxed + (long) mean
+                + (long) real.getSum() + (long) real.getMax() + (long) real.getMin()
+                + real.getCount() + (long) real.getAverage()
+                + (long) realBoxed + (long) averaged + (long) summed
+                + counted.getSum() + counted.getMin() + counted.getMax()
+                + counted.getCount() + (long) counted.getAverage(),
+            4_496_685_733_850L
         );
     }
 
@@ -550,39 +681,6 @@ public class Main {
     }
 
     @Benchmark
-    public long collection() {
-        final long sequential = this.list.stream()
-            .mapToLong(Long::longValue)
-            .filter(number -> number % 2L == 0L)
-            .map(number -> number + 1L)
-            .sum();
-        final long parallel = this.list.parallelStream()
-            .mapToLong(Long::longValue)
-            .map(number -> number * 2L)
-            .sum();
-        final long hashed = this.set.stream()
-            .mapToLong(Long::longValue)
-            .filter(number -> number % 3L == 0L)
-            .sum();
-        final long distinct = this.list.parallelStream()
-            .unordered()
-            .map(number -> number % 200_000L)
-            .distinct()
-            .mapToLong(Long::longValue)
-            .sum();
-        final long ordered = this.list.parallelStream()
-            .sequential()
-            .mapToLong(Long::longValue)
-            .filter(number -> number % 4L == 0L)
-            .map(number -> number - 1L)
-            .sum();
-        return this.verified(
-            sequential + parallel + hashed + distinct + ordered,
-            1_561_668_983_333L
-        );
-    }
-
-    @Benchmark
     public long overhead() {
         return this.verified(
             Arrays.stream(this.numbers)
@@ -593,112 +691,6 @@ public class Main {
                 .distinct()
                 .reduce(0L, Long::sum),
             32L
-        );
-    }
-
-    @Benchmark
-    public long forge(final Blackhole blackhole) {
-        final Gatherer<Long, long[], Long> windows = Gatherer.ofSequential(
-            () -> new long[2],
-            Gatherer.Integrator.ofGreedy(
-                (state, number, downstream) -> {
-                    state[0] = state[0] + 1L;
-                    state[1] = state[1] + number;
-                    if (state[0] < 1_000L) {
-                        return true;
-                    }
-                    final long window = state[1];
-                    state[0] = 0L;
-                    state[1] = 0L;
-                    return downstream.push(window);
-                }
-            ),
-            (state, downstream) -> {
-                if (state[0] > 0L) {
-                    downstream.push(state[1]);
-                }
-            }
-        );
-        final Gatherer<Long, Void, Long> growth = Gatherer.of(
-            Gatherer.Integrator.of(
-                (state, number, downstream) -> downstream.push(number * 2L)
-            )
-        );
-        final Gatherer<Long, long[], Long> total = Gatherer.of(
-            () -> new long[1],
-            Gatherer.Integrator.ofGreedy(
-                (state, number, downstream) -> {
-                    state[0] = state[0] + number;
-                    return true;
-                }
-            ),
-            (left, right) -> {
-                left[0] = left[0] + right[0];
-                return left;
-            },
-            (state, downstream) -> downstream.push(state[0])
-        );
-        final long composed = Arrays.stream(this.numbers)
-            .boxed()
-            .peek(blackhole::consume)
-            .gather(windows.andThen(growth))
-            .mapToLong(Long::longValue)
-            .sum();
-        final long summed = Arrays.stream(this.numbers)
-            .parallel()
-            .boxed()
-            .peek(blackhole::consume)
-            .gather(total)
-            .mapToLong(Long::longValue)
-            .sum();
-        final long accrued = Arrays.stream(this.numbers)
-            .boxed()
-            .peek(blackhole::consume)
-            .collect(
-                Collector.of(
-                    () -> new long[1],
-                    (box, number) -> box[0] = box[0] + number + 1L,
-                    (left, right) -> {
-                        left[0] = left[0] + right[0];
-                        return left;
-                    },
-                    box -> box[0]
-                )
-            );
-        final long concurrent = Arrays.stream(this.numbers)
-            .parallel()
-            .boxed()
-            .peek(blackhole::consume)
-            .collect(
-                Collector.of(
-                    LongAdder::new,
-                    (adder, number) -> adder.add(number * 2L),
-                    (left, right) -> {
-                        left.add(right.sum());
-                        return left;
-                    },
-                    LongAdder::sum,
-                    Collector.Characteristics.CONCURRENT,
-                    Collector.Characteristics.UNORDERED
-                )
-            );
-        final int identity = Arrays.stream(this.numbers)
-            .limit(500L)
-            .boxed()
-            .collect(
-                Collector.<Long, List<Long>>of(
-                    ArrayList::new,
-                    (kept, number) -> kept.add(number + 1L),
-                    (left, right) -> {
-                        left.addAll(right);
-                        return left;
-                    }
-                )
-            )
-            .size();
-        return this.verified(
-            composed + summed + accrued + concurrent + (long) identity,
-            3_000_004_000_500L
         );
     }
 
@@ -753,10 +745,54 @@ public class Main {
             )
             .map(number -> number + 5L)
             .sum();
+        final long ints = new Random(42L)
+            .ints(500_000L)
+            .asLongStream()
+            .map(number -> number & 0xFFFFL)
+            .sum();
+        final long longs = new Random(1_234L)
+            .longs(500_000L)
+            .map(number -> number & 0xFFFFL)
+            .sum();
+        final long reals = (long) new Random(9_999L)
+            .doubles(500_000L)
+            .map(number -> number * 100.0)
+            .sum();
+        final long bounded = new Random(7L)
+            .ints(500_000L, 0, 1_000)
+            .asLongStream()
+            .sum();
+        final long sequential = this.list.stream()
+            .mapToLong(Long::longValue)
+            .filter(number -> number % 2L == 0L)
+            .map(number -> number + 1L)
+            .sum();
+        final long pooled = this.list.parallelStream()
+            .mapToLong(Long::longValue)
+            .map(number -> number * 2L)
+            .sum();
+        final long hashed = this.set.stream()
+            .mapToLong(Long::longValue)
+            .filter(number -> number % 3L == 0L)
+            .sum();
+        final long distinct = this.list.parallelStream()
+            .unordered()
+            .map(number -> number % 200_000L)
+            .distinct()
+            .mapToLong(Long::longValue)
+            .sum();
+        final long ordered = this.list.parallelStream()
+            .sequential()
+            .mapToLong(Long::longValue)
+            .filter(number -> number % 4L == 0L)
+            .map(number -> number - 1L)
+            .sum();
         return this.verified(
             built + boxed + infinite + nullable + empty + supported + parallel
-                + iterated + made + concatenated,
-            750_008_754_500L
+                + iterated + made + concatenated
+                + ints + longs + reals + bounded
+                + sequential + pooled + hashed + distinct + ordered,
+            2_344_733_191_776L
         );
     }
 
@@ -790,82 +826,6 @@ public class Main {
                 .sum();
         }
         return this.verified(letters + points + words + spans + lines, 30_485_000L);
-    }
-
-    @Benchmark
-    public long random() {
-        final long ints = new Random(42L)
-            .ints(500_000L)
-            .asLongStream()
-            .map(number -> number & 0xFFFFL)
-            .sum();
-        final long longs = new Random(1_234L)
-            .longs(500_000L)
-            .map(number -> number & 0xFFFFL)
-            .sum();
-        final long reals = (long) new Random(9_999L)
-            .doubles(500_000L)
-            .map(number -> number * 100.0)
-            .sum();
-        final long bounded = new Random(7L)
-            .ints(500_000L, 0, 1_000)
-            .asLongStream()
-            .sum();
-        return this.verified(ints + longs + reals + bounded, 33_055_453_943L);
-    }
-
-    @Benchmark
-    public long numerics(final Blackhole blackhole) {
-        final IntSummaryStatistics whole = Arrays.stream(this.integers)
-            .filter(number -> number % 2 == 0)
-            .map(number -> number + 3)
-            .summaryStatistics();
-        final long wholeBoxed = Arrays.stream(this.integers)
-            .limit(200_000)
-            .boxed()
-            .peek(blackhole::consume)
-            .mapToInt(Integer::intValue)
-            .asLongStream()
-            .map(number -> number * 2L)
-            .sum();
-        final double mean = Arrays.stream(this.integers)
-            .map(number -> number % 1_000)
-            .average()
-            .getAsDouble();
-        final DoubleSummaryStatistics real = Arrays.stream(this.decimals)
-            .filter(number -> number % 2.0 == 0.0)
-            .map(number -> number + 1.0)
-            .summaryStatistics();
-        final double realBoxed = Arrays.stream(this.decimals)
-            .limit(200_000)
-            .boxed()
-            .peek(blackhole::consume)
-            .mapToDouble(Double::doubleValue)
-            .map(number -> number * 2.0)
-            .sum();
-        final double averaged = Arrays.stream(this.decimals)
-            .boxed()
-            .peek(blackhole::consume)
-            .collect(Collectors.averagingDouble(number -> number));
-        final double summed = Arrays.stream(this.decimals)
-            .boxed()
-            .peek(blackhole::consume)
-            .collect(Collectors.summingDouble(number -> number));
-        final LongSummaryStatistics counted = Arrays.stream(this.numbers)
-            .filter(number -> number % 3L != 0L)
-            .map(number -> number * 2L - 1L)
-            .summaryStatistics();
-        return this.verified(
-            whole.getSum() + (long) whole.getMax() + (long) whole.getMin()
-                + whole.getCount() + (long) whole.getAverage()
-                + wholeBoxed + (long) mean
-                + (long) real.getSum() + (long) real.getMax() + (long) real.getMin()
-                + real.getCount() + (long) real.getAverage()
-                + (long) realBoxed + (long) averaged + (long) summed
-                + counted.getSum() + counted.getMin() + counted.getMax()
-                + counted.getCount() + (long) counted.getAverage(),
-            1_746_678_733_850L
-        );
     }
 
     @Benchmark

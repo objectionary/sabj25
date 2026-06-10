@@ -40,9 +40,9 @@ The pipelines are built to measure the Stream API itself, not the
 - **No incidental repetition.** Where a pipeline sets out to cover the
   API, each method appears exactly once, so it measures the operation in
   combination with others rather than a loop of the same call.
-  Repetition shows up only when it is the subject itself, as in
-  `megamorphic`, which repeats `map()` and `filter()` on purpose to turn
-  the call sites megamorphic.
+  Repetition shows up only when it is the subject itself, as in the
+  chain inside `stateless` that repeats `map()` and `filter()` on
+  purpose to turn the call sites megamorphic.
 - **No easy optimization hotspots.** A `Blackhole` observation sits
   after each boxing stage, because otherwise GraalVM's partial escape
   analysis scalar-replaces the boxed `Long` and `Double` values and the
@@ -56,10 +56,11 @@ The pipelines are built to measure the Stream API itself, not the
 - **The full API, in combination.** The pipelines span all four stream
   types, `long`, `int`, `double`, and object, and weave terminal and
   intermediate methods together, including `flatMap()` and `mapMulti()`.
-- **One concern per pipeline.** `stateless` covers every stateless
-  operation including the one-to-one scalar conversions, `stateful` the
-  operations that must remember state, and `megamorphic` the megamorphic
-  call sites.
+- **One facet of the API per benchmark.** `stateless` covers the
+  stateless operations including the one-to-one scalar conversions,
+  `stateful` the operations that must remember state, `fold` the
+  reduction terminals, `ordered` the short-circuiting ones, and so on
+  through gatherers, collectors, sources, and parallel execution.
 
 ## Results
 

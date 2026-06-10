@@ -15,26 +15,20 @@ Non-standard Maven dirs: `src/main` and `src/test`.
 
 ## Benchmarks
 
-One class `Main`, nineteen `@Benchmark` methods.
+One class `Main`, twelve `@Benchmark` methods.
 Most run a `long` pipeline over 1,000,000 numbers.
-`longlar`: a chain in primitive longs, sequential then parallel.
-`stateless`: one of every stateless operation, including scalar conversions.
+Each method covers one facet of the Stream API.
+`stateless`: every stateless operation with scalar conversions, a primitive long chain sequential then parallel, and a megamorphic map/filter chain of many lambdas.
 `stateful`: operations that must remember state.
-`megamorphic`: many lambdas, megamorphic call sites.
-`gatherer`: the Java 25 `Gatherers` (window, scan, fold, `mapConcurrent`).
-`collectors`: composed teeing/grouping/partitioning, nested collectors through tree and linked maps, plus the remaining collectors.
-`fold`: `reduce` and the mutable three-arg `collect`, sequential and parallel.
-`objects`: a reference stream of `Pair` records, composed comparators, `thenComparing`, and `joining`.
+`gatherers`: the Java 25 `Gatherers` (window, scan, fold, `mapConcurrent`), hand-built gatherers, and a custom `Collector.of`, composed and driven in parallel.
+`collectors`: composed teeing/grouping/partitioning, nested collectors through tree and linked maps, the remaining collectors, plus a reference stream of `Pair` records, composed comparators, `thenComparing`, and `joining`.
+`fold`: `reduce` and the mutable three-arg `collect`, sequential and parallel, plus `IntStream`, `DoubleStream`, and `LongStream` summary statistics.
 `fanout`: `flatMap` and the primitive `mapMulti` variants that expand one into many.
 `materialize`: `toArray`/`toList`/`count`/`min`/`max`/`forEach` plus manual iterator and spliterator.
 `concurrent`: parallel stateful ops and concurrent collectors.
-`collection`: a `List` and a `Set` source instead of an array, with `unordered` and `sequential` toggles in parallel.
 `overhead`: fixed pipeline cost over only eight elements.
-`forge`: hand-built gatherers and a custom `Collector.of`, composed and driven in parallel.
-`sources`: stream builders, `iterate`, `generate`, `concat`, and spliterators.
+`sources`: stream builders, `iterate`, `generate`, `concat`, spliterators, seeded pseudorandom `ints`/`longs`/`doubles`, and `List`/`Set` sources with `unordered` and `sequential` toggles in parallel.
 `text`: `chars`, `codePoints`, `splitAsStream`, matches, and lines.
-`random`: seeded pseudorandom `ints`, `longs`, and `doubles`.
-`numerics`: `IntStream`, `DoubleStream`, and `LongStream` summary statistics.
 `ordered`: parallel order-sensitive slicing and short-circuiting match/find terminals.
 Every method ends with `verified(sum, expected)`.
 `verified` throws if the sum drifts from its constant.
