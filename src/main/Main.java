@@ -163,15 +163,16 @@ public class Main {
     @Benchmark
     public long stateful() {
         return this.verified(
-            Arrays.stream(this.numbers)
-                .skip(1_000)
-                .limit(800_000)
-                .sorted()
-                .distinct()
-                .dropWhile(number -> number < 50_000L)
-                .takeWhile(number -> number < 700_000L)
-                .sum(),
-            243_749_675_000L
+            this.mixed(
+                Arrays.stream(this.numbers)
+                    .skip(1_000)
+                    .limit(800_000)
+                    .sorted()
+                    .distinct()
+                    .dropWhile(number -> number < 50_000L)
+                    .takeWhile(number -> number < 700_000L)
+            ),
+            -5_762_489_910_492_220_024L
         );
     }
 
@@ -609,28 +610,28 @@ public class Main {
         final long[] ordered = new long[1];
         Arrays.stream(this.numbers)
             .filter(number -> number % 11L == 0L)
-            .forEachOrdered(number -> ordered[0] += number);
+            .forEachOrdered(number -> ordered[0] = ordered[0] * 31L + number);
         final long[] pulled = new long[1];
         final PrimitiveIterator.OfLong iterator = Arrays.stream(this.numbers)
             .filter(number -> number % 2L == 0L)
             .map(number -> number + 1L)
             .iterator();
         while (iterator.hasNext()) {
-            pulled[0] = pulled[0] + iterator.nextLong();
+            pulled[0] = pulled[0] * 31L + iterator.nextLong();
         }
         final long[] advanced = new long[1];
         final Spliterator.OfLong cursor = Arrays.stream(this.numbers)
             .map(number -> number * 2L)
             .spliterator();
-        cursor.tryAdvance((long number) -> advanced[0] = advanced[0] + number);
-        cursor.forEachRemaining((long number) -> advanced[0] = advanced[0] + number);
+        cursor.tryAdvance((long number) -> advanced[0] = advanced[0] * 31L + number);
+        cursor.forEachRemaining((long number) -> advanced[0] = advanced[0] * 31L + number);
         final long[] split = new long[1];
         final Spliterator.OfLong source = Arrays.stream(this.numbers).spliterator();
         final Spliterator.OfLong prefix = source.trySplit();
         if (prefix != null) {
-            prefix.forEachRemaining((long number) -> split[0] = split[0] + number);
+            prefix.forEachRemaining((long number) -> split[0] = split[0] * 31L + number);
         }
-        source.forEachRemaining((long number) -> split[0] = split[0] + number);
+        source.forEachRemaining((long number) -> split[0] = split[0] * 31L + number);
         final long reduced = Arrays.stream(this.numbers)
             .filter(number -> number % 7L == 0L)
             .map(number -> number + 2L)
@@ -639,19 +640,20 @@ public class Main {
         return this.verified(
             Arrays.stream(array).sum() + (long) list.size() + count + min + max + total[0] + ordered[0]
                 + pulled[0] + advanced[0] + split[0] + reduced,
-            2_188_318_130_733L
+            -5_842_838_572_838_927_359L
         );
     }
 
     @Benchmark
     public long concurrent(final Blackhole blackhole) {
-        final long stateful = Arrays.stream(this.numbers)
-            .parallel()
-            .map(number -> number % 100_000L)
-            .distinct()
-            .sorted()
-            .map(number -> number + 1L)
-            .sum();
+        final long stateful = this.mixed(
+            Arrays.stream(this.numbers)
+                .parallel()
+                .map(number -> number % 100_000L)
+                .distinct()
+                .sorted()
+                .map(number -> number + 1L)
+        );
         final ConcurrentMap<Long, Long> grouped = Arrays.stream(this.numbers)
             .parallel()
             .boxed()
@@ -676,21 +678,22 @@ public class Main {
             stateful
                 + grouped.values().stream().mapToLong(Long::longValue).sum()
                 + partitioned.values().stream().mapToLong(Long::longValue).sum(),
-            1_005_001_050_000L
+            -4_077_973_089_047_142_512L
         );
     }
 
     @Benchmark
     public long overhead() {
         return this.verified(
-            Arrays.stream(this.numbers)
-                .limit(8L)
-                .filter(number -> number % 2L == 1L)
-                .map(number -> number * 2L)
-                .sorted()
-                .distinct()
-                .reduce(0L, Long::sum),
-            32L
+            this.mixed(
+                Arrays.stream(this.numbers)
+                    .limit(8L)
+                    .filter(number -> number % 2L == 1L)
+                    .map(number -> number * 2L)
+                    .sorted()
+                    .distinct()
+            ),
+            65_672L
         );
     }
 
@@ -836,24 +839,28 @@ public class Main {
             .map(number -> number + 1L)
             .findFirst()
             .getAsLong();
-        final long limited = Arrays.stream(this.numbers)
-            .parallel()
-            .map(number -> number * 2L)
-            .limit(100_000L)
-            .sum();
-        final long skipped = Arrays.stream(this.numbers)
-            .parallel()
-            .skip(900_000L)
-            .map(number -> number + 1L)
-            .sum();
-        final long taken = Arrays.stream(this.numbers)
-            .parallel()
-            .takeWhile(number -> number < 300_000L)
-            .sum();
-        final long dropped = Arrays.stream(this.numbers)
-            .parallel()
-            .dropWhile(number -> number < 999_000L)
-            .sum();
+        final long limited = this.mixed(
+            Arrays.stream(this.numbers)
+                .parallel()
+                .map(number -> number * 2L)
+                .limit(100_000L)
+        );
+        final long skipped = this.mixed(
+            Arrays.stream(this.numbers)
+                .parallel()
+                .skip(900_000L)
+                .map(number -> number + 1L)
+        );
+        final long taken = this.mixed(
+            Arrays.stream(this.numbers)
+                .parallel()
+                .takeWhile(number -> number < 300_000L)
+        );
+        final long dropped = this.mixed(
+            Arrays.stream(this.numbers)
+                .parallel()
+                .dropWhile(number -> number < 999_000L)
+        );
         final boolean any = Arrays.stream(this.numbers).anyMatch(number -> number > 999_990L);
         final boolean all = Arrays.stream(this.numbers).allMatch(number -> number < 2_000_000L);
         final boolean none = Arrays.stream(this.numbers).noneMatch(number -> number > 2_000_000L);
@@ -870,8 +877,14 @@ public class Main {
         return this.verified(
             first + limited + skipped + taken + dropped
                 + (any ? 1L : 0L) + (all ? 1L : 0L) + (none ? 1L : 0L) + found + only,
-            151_003_654_067L
+            -2_200_368_215_367_540_077L
         );
+    }
+
+    private long mixed(final LongStream stream) {
+        final long[] mix = new long[1];
+        stream.forEachOrdered(number -> mix[0] = mix[0] * 31L + number);
+        return mix[0];
     }
 
     private long verified(final long sum, final long expected) {

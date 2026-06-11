@@ -30,9 +30,12 @@ Each method covers one facet of the Stream API.
 `sources`: stream builders, `iterate`, `generate`, `concat`, spliterators, seeded pseudorandom `ints`/`longs`/`doubles`, and `List`/`Set` sources with `unordered` and `sequential` toggles in parallel.
 `text`: `chars`, `codePoints`, `splitAsStream`, matches, and lines.
 `ordered`: parallel order-sensitive slicing and short-circuiting match/find terminals.
-Every method ends with `verified(sum, expected)`.
-`verified` throws if the sum drifts from its constant.
+Every method ends with `verified(result, expected)`.
+`verified` throws if the result drifts from its constant.
 Those constants guard against silent pipeline bugs.
+Order-sensitive pipelines fold through `mixed`, not a plain sum.
+`mixed` rolls a `*31` hash over the stream via `forEachOrdered`.
+That makes verification fail on order and identity drift too.
 
 ## Build and run
 
