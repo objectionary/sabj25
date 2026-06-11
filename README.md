@@ -50,9 +50,14 @@ The pipelines are built to measure the Stream API itself, not the
   of work.
 - **Lambdas do real arithmetic.** No lambda is an identity function;
   every element flows through genuine computation at each step.
-- **Every result is verified.** Each pipeline checks its sum against a
+- **Every result is verified.** Each pipeline checks its result against a
   precomputed constant, so a run that silently skipped work fails loudly
   rather than reporting a fast but wrong number.
+  Order-insensitive pipelines fold into a plain sum, while pipelines
+  whose contract includes encounter order, such as `sorted()`,
+  `limit()`, and `forEachOrdered()`, fold through a rolling `31`-based
+  mix, so a result that holds the right elements in the wrong order
+  fails too.
 - **The full API, in combination.** The pipelines span all four stream
   types, `long`, `int`, `double`, and object, and weave terminal and
   intermediate methods together, including `flatMap()` and `mapMulti()`.
