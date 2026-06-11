@@ -649,10 +649,10 @@ public class Main {
         final long stateful = this.mixed(
             Arrays.stream(this.numbers)
                 .parallel()
-                .map(number -> number % 100_000L)
+                .mapToObj(number -> new Pair(number % 100_000L, number))
                 .distinct()
-                .sorted()
-                .map(number -> number + 1L)
+                .sorted(Comparator.comparingLong(Pair::head))
+                .mapToLong(Pair::tail)
         );
         final ConcurrentMap<Long, Long> grouped = Arrays.stream(this.numbers)
             .parallel()
@@ -678,7 +678,7 @@ public class Main {
             stateful
                 + grouped.values().stream().mapToLong(Long::longValue).sum()
                 + partitioned.values().stream().mapToLong(Long::longValue).sum(),
-            -4_077_973_089_047_142_512L
+            4_654_815_638_209_436_400L
         );
     }
 
@@ -899,12 +899,25 @@ public class Main {
     /**
      * A pairing of a number with a value derived from it, giving the object
      * pipelines a genuine reference type to carry, sort, and key on rather than
-     * a boxed primitive.
+     * a boxed primitive. Equality and hashing collapse on the head alone, so
+     * two pairs sharing a head but carrying different tails are equal yet
+     * distinguishable; this lets a {@code distinct()} over pairs expose whether
+     * the surviving element honours encounter order, which folding the tails
+     * through the order-sensitive hash then certifies.
      *
      * @param head The original number
      * @param tail A number derived from the original
      * @since 0.0.1
      */
     private record Pair(long head, long tail) {
+        @Override
+        public boolean equals(final Object other) {
+            return other instanceof Pair pair && pair.head == this.head;
+        }
+
+        @Override
+        public int hashCode() {
+            return Long.hashCode(this.head);
+        }
     }
 }
