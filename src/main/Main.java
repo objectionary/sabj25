@@ -63,7 +63,10 @@ import org.openjdk.jmh.infra.Blackhole;
  * pool together with the primitive int, double, and long streams gathered
  * into summary statistics with boxed round-trips and averaging, one that
  * expands every element through fan-out flat-maps and the primitive
- * map-multi variants, one of the materializing terminals that also drains a
+ * map-multi variants and follows one flat-map over a large inner stream
+ * with a downstream short-circuit, tallying the inner elements actually
+ * produced so that a flat-map which over-drains fails verification, one of
+ * the materializing terminals that also drains a
  * pipeline through its own iterator and spliterator, one that runs stateful
  * operations and concurrent collectors across the fork-join pool, one that
  * measures the fixed overhead of a pipeline over only a handful of
@@ -580,10 +583,22 @@ public class Main {
             .limit(1_000L)
             .boxed()
             .toArray(Long[]::new);
+        final LongAdder produced = new LongAdder();
+        final long shorted = Arrays.stream(this.numbers)
+            .limit(4L)
+            .boxed()
+            .peek(blackhole::consume)
+            .flatMap(number -> LongStream.rangeClosed(1L, 1_000_000L)
+                .mapToObj(inner -> number + inner)
+                .peek(value -> produced.increment()))
+            .limit(10L)
+            .mapToLong(Long::longValue)
+            .sum();
         return this.verified(
             expanded + widened + (long) real
-                + (long) ints + longs + (long) doubles + (long) array.length,
-            300_013_801_023L
+                + (long) ints + longs + (long) doubles + (long) array.length
+                + shorted + produced.sum(),
+            300_013_801_098L
         );
     }
 
