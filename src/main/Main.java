@@ -74,7 +74,10 @@ import org.openjdk.jmh.infra.Blackhole;
  * one that walks the characters, code points, regular-expression matches,
  * and buffered lines of a block of text, and one that drives the
  * order-sensitive slicing and short-circuiting matching and finding
- * terminals across the fork-join pool.
+ * terminals across the fork-join pool. The pipelines that sort draw from a
+ * deterministically shuffled copy of the source rather than the ascending
+ * range, so {@code sorted} pays its full comparison cost instead of the
+ * near-linear best case the adaptive sort takes on already-ordered input.
  *
  * @since 0.0.1
  */
@@ -87,6 +90,8 @@ import org.openjdk.jmh.infra.Blackhole;
 public class Main {
 
     private final long[] numbers = LongStream.rangeClosed(1, 1_000_000).toArray();
+
+    private final long[] scrambled = Main.scrambled(this.numbers);
 
     private final int[] integers = IntStream.rangeClosed(1, 1_000_000).toArray();
 
@@ -164,7 +169,7 @@ public class Main {
     public long stateful() {
         return this.verified(
             this.mixed(
-                Arrays.stream(this.numbers)
+                Arrays.stream(this.scrambled)
                     .skip(1_000)
                     .limit(800_000)
                     .sorted()
@@ -172,7 +177,7 @@ public class Main {
                     .dropWhile(number -> number < 50_000L)
                     .takeWhile(number -> number < 700_000L)
             ),
-            -5_762_489_910_492_220_024L
+            1_188_043_783_387_903_344L
         );
     }
 
@@ -296,7 +301,7 @@ public class Main {
 
     @Benchmark
     public long collectors(final Blackhole blackhole) {
-        final long teed = Arrays.stream(this.numbers)
+        final long teed = Arrays.stream(this.scrambled)
             .boxed()
             .sorted(Comparator.reverseOrder())
             .collect(
@@ -385,7 +390,7 @@ public class Main {
             .limit(10_000L)
             .boxed()
             .collect(Collectors.toUnmodifiableMap(number -> number, number -> number * 2L));
-        final Map<Long, Long> paired = Arrays.stream(this.numbers)
+        final Map<Long, Long> paired = Arrays.stream(this.scrambled)
             .mapToObj(number -> new Pair(number, number % 8L))
             .peek(blackhole::consume)
             .sorted(Comparator.comparingLong(Pair::head).reversed())
@@ -415,13 +420,13 @@ public class Main {
             .limit(1_000L)
             .mapToLong(Pair::tail)
             .sum();
-        final String wrapped = Arrays.stream(this.numbers)
+        final String wrapped = Arrays.stream(this.scrambled)
             .limit(1_000L)
             .boxed()
             .sorted(Comparator.<Long>naturalOrder().reversed())
             .map(number -> number.toString())
             .collect(Collectors.joining(",", "[", "]"));
-        final List<Long> reversed = Arrays.stream(this.numbers)
+        final List<Long> reversed = Arrays.stream(this.scrambled)
             .limit(500L)
             .boxed()
             .sorted(Comparator.reverseOrder())
@@ -443,7 +448,7 @@ public class Main {
                 + paired.values().stream().mapToLong(Long::longValue).sum()
                 + reduced + joined + ranked
                 + (long) wrapped.length() + (long) reversed.size(),
-            3_500_234_553_727L
+            3_500_234_556_718L
         );
     }
 
@@ -647,7 +652,7 @@ public class Main {
     @Benchmark
     public long concurrent(final Blackhole blackhole) {
         final long stateful = this.mixed(
-            Arrays.stream(this.numbers)
+            Arrays.stream(this.scrambled)
                 .parallel()
                 .map(number -> number % 100_000L)
                 .distinct()
@@ -879,6 +884,28 @@ public class Main {
                 + (any ? 1L : 0L) + (all ? 1L : 0L) + (none ? 1L : 0L) + found + only,
             -2_200_368_215_367_540_077L
         );
+    }
+
+    /**
+     * A deterministically shuffled copy of the source, so the order-sensitive
+     * operations under test, above all {@code sorted}, face randomly arranged
+     * input rather than the ascending range that lets the adaptive sort
+     * collapse into its near-linear best case. The seed is fixed so the
+     * pipelines stay reproducible and their folded results remain verifiable.
+     *
+     * @param source The ascending source to copy and shuffle
+     * @return A shuffled copy of the source
+     */
+    private static long[] scrambled(final long[] source) {
+        final long[] copy = source.clone();
+        final Random random = new Random(42L);
+        for (int index = copy.length - 1; index > 0; index = index - 1) {
+            final int swap = random.nextInt(index + 1);
+            final long value = copy[index];
+            copy[index] = copy[swap];
+            copy[swap] = value;
+        }
+        return copy;
     }
 
     private long mixed(final LongStream stream) {
