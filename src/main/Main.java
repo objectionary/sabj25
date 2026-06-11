@@ -74,10 +74,11 @@ import org.openjdk.jmh.infra.Blackhole;
  * one that walks the characters, code points, regular-expression matches,
  * and buffered lines of a block of text, and one that drives the
  * order-sensitive slicing and short-circuiting matching and finding
- * terminals across the fork-join pool. The pipelines that sort draw from a
- * deterministically shuffled copy of the source rather than the ascending
- * range, so {@code sorted} pays its full comparison cost instead of the
- * near-linear best case the adaptive sort takes on already-ordered input.
+ * terminals across the fork-join pool. The sequential pipelines that sort
+ * draw from a deterministically shuffled copy of the source rather than the
+ * ascending range, so {@code sorted} pays its full comparison cost instead
+ * of the near-linear best case the adaptive sort takes on already-ordered
+ * input.
  *
  * @since 0.0.1
  */
@@ -652,7 +653,7 @@ public class Main {
     @Benchmark
     public long concurrent(final Blackhole blackhole) {
         final long stateful = this.mixed(
-            Arrays.stream(this.scrambled)
+            Arrays.stream(this.numbers)
                 .parallel()
                 .map(number -> number % 100_000L)
                 .distinct()
