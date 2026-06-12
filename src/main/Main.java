@@ -460,6 +460,10 @@ public class Main {
         final long reduced = Arrays.stream(this.numbers)
             .filter(number -> number % 2L == 0L)
             .map(number -> number * 3L - 1L)
+            .filter(number -> number % 7L != 0L)
+            .map(number -> number + 5L)
+            .filter(number -> number % 11L != 0L)
+            .map(number -> number - 2L)
             .reduce(0L, Long::sum);
         final long combined = Arrays.stream(this.numbers)
             .boxed()
@@ -478,6 +482,9 @@ public class Main {
         final IntSummaryStatistics whole = Arrays.stream(this.integers)
             .filter(number -> number % 2 == 0)
             .map(number -> number + 3)
+            .filter(number -> number % 5 != 0)
+            .map(number -> number * 2)
+            .map(number -> number - 1)
             .summaryStatistics();
         final long wholeBoxed = Arrays.stream(this.integers)
             .limit(200_000)
@@ -489,11 +496,17 @@ public class Main {
             .sum();
         final double mean = Arrays.stream(this.integers)
             .map(number -> number % 1_000)
+            .filter(number -> number % 2 == 0)
+            .map(number -> number + 1)
+            .map(number -> number * 3)
             .average()
             .getAsDouble();
         final DoubleSummaryStatistics real = Arrays.stream(this.decimals)
             .filter(number -> number % 2.0 == 0.0)
             .map(number -> number + 1.0)
+            .filter(number -> number % 4.0 != 0.0)
+            .map(number -> number * 2.0)
+            .map(number -> number - 0.5)
             .summaryStatistics();
         final double realBoxed = Arrays.stream(this.decimals)
             .limit(200_000)
@@ -513,6 +526,9 @@ public class Main {
         final LongSummaryStatistics counted = Arrays.stream(this.numbers)
             .filter(number -> number % 3L != 0L)
             .map(number -> number * 2L - 1L)
+            .filter(number -> number % 5L != 0L)
+            .map(number -> number + 7L)
+            .map(number -> number - 3L)
             .summaryStatistics();
         return this.verified(
             reduced + combined + collected + pooled + gathered
@@ -524,7 +540,7 @@ public class Main {
                 + (long) realBoxed + (long) averaged + (long) summed
                 + counted.getSum() + counted.getMin() + counted.getMax()
                 + counted.getCount() + (long) counted.getAverage(),
-            4_496_685_733_850L
+            4_597_776_145_022L
         );
     }
 
@@ -743,6 +759,9 @@ public class Main {
             .sum();
         final long iterated = LongStream.iterate(1L, number -> number <= 500_000L, number -> number + 1L)
             .map(number -> number + 1L)
+            .filter(number -> number % 2L == 0L)
+            .map(number -> number * 2L)
+            .map(number -> number - 3L)
             .sum();
         final long made = Stream.generate(() -> 2L)
             .limit(500_000L)
@@ -755,36 +774,53 @@ public class Main {
                 LongStream.range(250_000L, 500_000L)
             )
             .map(number -> number + 5L)
+            .filter(number -> number % 3L != 0L)
+            .map(number -> number * 2L)
             .sum();
         final long ints = new Random(42L)
             .ints(500_000L)
             .asLongStream()
             .map(number -> number & 0xFFFFL)
+            .map(number -> number + 1L)
+            .filter(number -> number % 2L == 0L)
             .sum();
         final long longs = new Random(1_234L)
             .longs(500_000L)
             .map(number -> number & 0xFFFFL)
+            .map(number -> number + 3L)
+            .filter(number -> number % 2L != 0L)
             .sum();
         final long reals = (long) new Random(9_999L)
             .doubles(500_000L)
             .map(number -> number * 100.0)
+            .map(number -> number + 1.0)
+            .filter(number -> number > 1.0)
             .sum();
         final long bounded = new Random(7L)
             .ints(500_000L, 0, 1_000)
             .asLongStream()
+            .map(number -> number + 1L)
+            .filter(number -> number % 2L == 0L)
+            .map(number -> number * 2L)
             .sum();
         final long sequential = this.list.stream()
             .mapToLong(Long::longValue)
             .filter(number -> number % 2L == 0L)
             .map(number -> number + 1L)
+            .filter(number -> number % 3L != 0L)
+            .map(number -> number * 2L)
             .sum();
         final long pooled = this.list.parallelStream()
             .mapToLong(Long::longValue)
             .map(number -> number * 2L)
+            .map(number -> number + 1L)
+            .filter(number -> number % 2L == 0L)
             .sum();
         final long hashed = this.set.stream()
             .mapToLong(Long::longValue)
             .filter(number -> number % 3L == 0L)
+            .map(number -> number + 1L)
+            .map(number -> number * 2L)
             .sum();
         final long distinct = this.list.parallelStream()
             .unordered()
@@ -797,13 +833,15 @@ public class Main {
             .mapToLong(Long::longValue)
             .filter(number -> number % 4L == 0L)
             .map(number -> number - 1L)
+            .map(number -> number + 3L)
+            .filter(number -> number % 2L == 0L)
             .sum();
         return this.verified(
             built + boxed + infinite + nullable + empty + supported + parallel
                 + iterated + made + concatenated
                 + ints + longs + reals + bounded
                 + sequential + pooled + hashed + distinct + ordered,
-            2_344_733_191_776L
+            1_620_009_495_741L
         );
     }
 
