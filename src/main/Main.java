@@ -63,10 +63,7 @@ import org.openjdk.jmh.infra.Blackhole;
  * pool together with the primitive int, double, and long streams gathered
  * into summary statistics with boxed round-trips and averaging, one that
  * expands every element through fan-out flat-maps and the primitive
- * map-multi variants and follows one flat-map over a large inner stream
- * with a downstream short-circuit, tallying the inner elements actually
- * produced so that a flat-map which over-drains fails verification, one of
- * the materializing terminals that also drains a
+ * map-multi variants, one of the materializing terminals that also drains a
  * pipeline through its own iterator and spliterator, one that runs stateful
  * operations and concurrent collectors across the fork-join pool, one that
  * measures the fixed overhead of a pipeline over only a handful of
@@ -77,11 +74,13 @@ import org.openjdk.jmh.infra.Blackhole;
  * one that walks the characters, code points, regular-expression matches,
  * and buffered lines of a block of text, and one that drives the
  * order-sensitive slicing and short-circuiting matching and finding
- * terminals across the fork-join pool. The sequential pipelines that sort
- * draw from a deterministically shuffled copy of the source rather than the
- * ascending range, so {@code sorted} pays its full comparison cost instead
- * of the near-linear best case the adaptive sort takes on already-ordered
- * input.
+ * terminals across the fork-join pool and short-circuits a flat-map whose
+ * inner stream is unbounded, draining only the prefix the downstream limit
+ * consumes so that a flat-map which over-drains never terminates. The
+ * sequential pipelines that sort draw from a deterministically shuffled
+ * copy of the source rather than the ascending range, so {@code sorted}
+ * pays its full comparison cost instead of the near-linear best case the
+ * adaptive sort takes on already-ordered input.
  *
  * @since 0.0.1
  */
@@ -583,22 +582,10 @@ public class Main {
             .limit(1_000L)
             .boxed()
             .toArray(Long[]::new);
-        final LongAdder produced = new LongAdder();
-        final long shorted = Arrays.stream(this.numbers)
-            .limit(4L)
-            .boxed()
-            .peek(blackhole::consume)
-            .flatMap(number -> LongStream.rangeClosed(1L, 1_000_000L)
-                .mapToObj(inner -> number + inner)
-                .peek(value -> produced.increment()))
-            .limit(10L)
-            .mapToLong(Long::longValue)
-            .sum();
         return this.verified(
             expanded + widened + (long) real
-                + (long) ints + longs + (long) doubles + (long) array.length
-                + shorted + produced.sum(),
-            300_013_801_098L
+                + (long) ints + longs + (long) doubles + (long) array.length,
+            300_013_801_023L
         );
     }
 
@@ -895,10 +882,17 @@ public class Main {
             .map(number -> number * 2L)
             .findAny()
             .getAsLong();
+        final long shorted = Arrays.stream(this.numbers)
+            .boxed()
+            .flatMap(number -> LongStream.iterate(number, inner -> inner + 1L).boxed())
+            .limit(10L)
+            .mapToLong(Long::longValue)
+            .sum();
         return this.verified(
             first + limited + skipped + taken + dropped
-                + (any ? 1L : 0L) + (all ? 1L : 0L) + (none ? 1L : 0L) + found + only,
-            -2_200_368_215_367_540_077L
+                + (any ? 1L : 0L) + (all ? 1L : 0L) + (none ? 1L : 0L) + found + only
+                + shorted,
+            -2_200_368_215_367_540_022L
         );
     }
 
