@@ -33,6 +33,7 @@ Each method covers one facet of the Stream API.
 Every method ends with `verified(result, expected)`.
 `verified` throws if the result drifts from its constant.
 Those constants guard against silent pipeline bugs.
+The workload is fixed by design, with no knob to scale it.
 Order-sensitive pipelines fold through `mixed`, not a plain sum.
 `mixed` rolls a `*31` hash over the stream via `forEachOrdered`.
 That makes verification fail on order and identity drift too.

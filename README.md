@@ -59,6 +59,16 @@ The pipelines are built to measure the Stream API itself, not the
   `limit()`, and `forEachOrdered()`, fold through a rolling `31`-based
   mix, so a result that holds the right elements in the wrong order
   fails too.
+- **The workload is fixed.** The arrays hold one million numbers, the
+  text fixtures hold ten thousand words and lines, and the `skip()`,
+  `limit()`, and threshold arguments woven through the pipelines are
+  tuned to those counts.
+  No environment variable, system property, or `@Param` scales them,
+  and that is deliberate: the verified constants are precomputed for
+  exactly this workload, so a scaled run would have nothing to check
+  its results against.
+  To run longer, raise the JMH fork or iteration counts rather than
+  the element count.
 - **The full API, in combination.** The pipelines span all four stream
   types, `long`, `int`, `double`, and object, and weave terminal and
   intermediate methods together, including `flatMap()` and `mapMulti()`.
