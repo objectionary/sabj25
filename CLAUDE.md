@@ -8,7 +8,7 @@ Repo objectionary/sabj25, license MIT.
 
 Non-standard Maven dirs: `src/main` and `src/test`.
 `src/main/Main.java` holds the JMH benchmarks.
-`src/test/MainTest.java` runs JMH from a JUnit test.
+`src/test/MainTest.java` runs JMH from a JUnit test and checks `NUMBERS` scaling.
 `.github/benchmark.sh` renders the results table.
 `.github/workflows/benchmark.yml` is the CI pipeline.
 `target/` is build output, git-ignored.
@@ -16,7 +16,7 @@ Non-standard Maven dirs: `src/main` and `src/test`.
 ## Benchmarks
 
 One class `Main`, twelve `@Benchmark` methods.
-Most run a `long` pipeline over 1,000,000 numbers.
+Most run a `long` pipeline over `NUMBERS` million numbers, one million by default.
 Each method covers one facet of the Stream API.
 `stateless`: every stateless operation with scalar conversions, a primitive long chain sequential then parallel, and a megamorphic map/filter chain of many lambdas.
 `stateful`: operations that must remember state.
@@ -33,7 +33,9 @@ Each method covers one facet of the Stream API.
 Every method ends with `verified(result, expected)`.
 `verified` throws if the result drifts from its constant.
 Those constants guard against silent pipeline bugs.
-The workload is fixed by design, with no knob to scale it.
+The `NUMBERS` env var scales every fixture, count, slice, and threshold.
+Window widths, bucket moduli, seeds, and the eight elements of `overhead` stay fixed.
+`verified` compares against its constant only when `NUMBERS` is 1.
 Order-sensitive pipelines fold through `mixed`, not a plain sum.
 `mixed` rolls a `*31` hash over the stream via `forEachOrdered`.
 That makes verification fail on order and identity drift too.

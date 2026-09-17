@@ -46,7 +46,8 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 /**
- * Benchmarks of long stream pipelines over an array of one million numbers,
+ * Benchmarks of long stream pipelines over an array of a million numbers,
+ * or as many millions as the {@code NUMBERS} environment variable names,
  * one per facet of the Stream API: one of every stateless operation,
  * including all the scalar one-to-one conversions, that also drives a
  * primitive long chain sequentially and across the fork-join pool and
@@ -80,7 +81,15 @@ import org.openjdk.jmh.infra.Blackhole;
  * sequential pipelines that sort draw from a deterministically shuffled
  * copy of the source rather than the ascending range, so {@code sorted}
  * pays its full comparison cost instead of the near-linear best case the
- * adaptive sort takes on already-ordered input.
+ * adaptive sort takes on already-ordered input. The {@code NUMBERS}
+ * environment variable multiplies every fixture and every count, slice,
+ * and threshold woven through the pipelines, so {@code NUMBERS=10} runs
+ * each of them over ten million numbers, while the arguments that shape a
+ * pipeline rather than size it stay fixed: the window widths, the small
+ * moduli that fan elements into a set number of buckets, the seeds, and
+ * the handful of elements behind the overhead pipeline. The constants
+ * the results are verified against are precomputed for the default
+ * workload of one million, so the check binds only there.
  *
  * @since 0.0.1
  */
@@ -92,25 +101,43 @@ import org.openjdk.jmh.infra.Blackhole;
 @Fork(2)
 public class Main {
 
-    private final long[] numbers = LongStream.rangeClosed(1, 1_000_000).toArray();
+    private final int scale;
 
-    private final long[] scrambled = Main.scrambled(this.numbers);
+    private final long[] numbers;
 
-    private final int[] integers = IntStream.rangeClosed(1, 1_000_000).toArray();
+    private final long[] scrambled;
 
-    private final double[] decimals =
-        LongStream.rangeClosed(1L, 1_000_000L).asDoubleStream().toArray();
+    private final int[] integers;
 
-    private final List<Long> list = Arrays.stream(this.numbers).boxed().toList();
+    private final double[] decimals;
 
-    private final Set<Long> set = Set.copyOf(this.list);
+    private final List<Long> list;
 
-    private final String prose =
-        "the quick brown fox jumps over the lazy dog ".repeat(10_000);
+    private final Set<Long> set;
 
-    private final String document = LongStream.rangeClosed(1L, 10_000L)
-        .mapToObj(Long::toString)
-        .collect(Collectors.joining("\n"));
+    private final String prose;
+
+    private final String document;
+
+    public Main() {
+        this(Integer.parseInt(System.getenv().getOrDefault("NUMBERS", "1")));
+    }
+
+    Main(final int scale) {
+        this.scale = scale;
+        this.numbers = LongStream.rangeClosed(1L, 1_000_000L * scale).toArray();
+        this.scrambled = Main.scrambled(this.numbers);
+        this.integers = IntStream.rangeClosed(1, 1_000_000 * scale).toArray();
+        this.decimals =
+            LongStream.rangeClosed(1L, 1_000_000L * scale).asDoubleStream().toArray();
+        this.list = Arrays.stream(this.numbers).boxed().toList();
+        this.set = Set.copyOf(this.list);
+        this.prose =
+            "the quick brown fox jumps over the lazy dog ".repeat(10_000 * scale);
+        this.document = LongStream.rangeClosed(1L, 10_000L * scale)
+            .mapToObj(Long::toString)
+            .collect(Collectors.joining("\n"));
+    }
 
     @Benchmark
     public long stateless(final Blackhole blackhole) {
@@ -153,11 +180,11 @@ public class Main {
             .map(number -> number + 3L)
             .filter(number -> number % 5L != 0L)
             .map(number -> number * 2L)
-            .filter(number -> number > 100L)
+            .filter(number -> number > 100L * this.scale)
             .map(number -> number - 7L)
             .filter(number -> number % 3L != 0L)
             .map(number -> number + 11L)
-            .filter(number -> number < 1_900_000L)
+            .filter(number -> number < 1_900_000L * this.scale)
             .map(number -> number / 2L)
             .filter(number -> number % 7L != 0L)
             .map(number -> number + 1L)
@@ -173,12 +200,12 @@ public class Main {
         return this.verified(
             this.mixed(
                 Arrays.stream(this.scrambled)
-                    .skip(1_000)
-                    .limit(800_000)
+                    .skip(1_000L * this.scale)
+                    .limit(800_000L * this.scale)
                     .sorted()
                     .distinct()
-                    .dropWhile(number -> number < 50_000L)
-                    .takeWhile(number -> number < 700_000L)
+                    .dropWhile(number -> number < 50_000L * this.scale)
+                    .takeWhile(number -> number < 700_000L * this.scale)
             ),
             1_188_043_783_387_903_344L
         );
@@ -283,7 +310,7 @@ public class Main {
                 )
             );
         final int identity = Arrays.stream(this.numbers)
-            .limit(500L)
+            .limit(500L * this.scale)
             .boxed()
             .collect(
                 Collector.<Long, List<Long>>of(
@@ -355,7 +382,7 @@ public class Main {
             .map(number -> number % 100L)
             .collect(Collectors.toUnmodifiableSet());
         final List<Long> listed = Arrays.stream(this.numbers)
-            .limit(500L)
+            .limit(500L * this.scale)
             .boxed()
             .collect(Collectors.toCollection(ArrayList::new));
         final Map<Long, Map<Long, Long>> grouped = Arrays.stream(this.numbers)
@@ -379,7 +406,7 @@ public class Main {
                 )
             );
         final Map<Long, Long> merged = Arrays.stream(this.numbers)
-            .limit(10_000L)
+            .limit(10_000L * this.scale)
             .boxed()
             .collect(
                 Collectors.toMap(
@@ -390,7 +417,7 @@ public class Main {
                 )
             );
         final Map<Long, Long> immutable = Arrays.stream(this.numbers)
-            .limit(10_000L)
+            .limit(10_000L * this.scale)
             .boxed()
             .collect(Collectors.toUnmodifiableMap(number -> number, number -> number * 2L));
         final Map<Long, Long> paired = Arrays.stream(this.scrambled)
@@ -408,29 +435,29 @@ public class Main {
                 )
             );
         final long joined = Arrays.stream(this.numbers)
-            .limit(1_000L)
+            .limit(1_000L * this.scale)
             .mapToObj(Long::toString)
             .collect(Collectors.joining(","))
             .length();
         final long ranked = Arrays.stream(this.numbers)
-            .limit(100_000L)
+            .limit(100_000L * this.scale)
             .mapToObj(number -> new Pair(number % 50L, number))
             .peek(blackhole::consume)
             .sorted(
                 Comparator.comparingLong(Pair::head)
                     .thenComparing(Comparator.comparingLong(Pair::tail).reversed())
             )
-            .limit(1_000L)
+            .limit(1_000L * this.scale)
             .mapToLong(Pair::tail)
             .sum();
         final String wrapped = Arrays.stream(this.scrambled)
-            .limit(1_000L)
+            .limit(1_000L * this.scale)
             .boxed()
             .sorted(Comparator.<Long>naturalOrder().reversed())
             .map(number -> number.toString())
             .collect(Collectors.joining(",", "[", "]"));
         final List<Long> reversed = Arrays.stream(this.scrambled)
-            .limit(500L)
+            .limit(500L * this.scale)
             .boxed()
             .sorted(Comparator.reverseOrder())
             .collect(Collectors.toUnmodifiableList());
@@ -487,7 +514,7 @@ public class Main {
             .map(number -> number - 1)
             .summaryStatistics();
         final long wholeBoxed = Arrays.stream(this.integers)
-            .limit(200_000)
+            .limit(200_000L * this.scale)
             .boxed()
             .peek(blackhole::consume)
             .mapToInt(Integer::intValue)
@@ -509,7 +536,7 @@ public class Main {
             .map(number -> number - 0.5)
             .summaryStatistics();
         final double realBoxed = Arrays.stream(this.decimals)
-            .limit(200_000)
+            .limit(200_000L * this.scale)
             .boxed()
             .peek(blackhole::consume)
             .mapToDouble(Double::doubleValue)
@@ -547,27 +574,27 @@ public class Main {
     @Benchmark
     public long fanout(final Blackhole blackhole) {
         final long expanded = Arrays.stream(this.numbers)
-            .limit(200_000L)
+            .limit(200_000L * this.scale)
             .boxed()
             .peek(blackhole::consume)
             .flatMap(number -> Stream.of(number, number + 1L, number + 2L))
             .flatMapToLong(number -> LongStream.of(number, number * 2L))
             .sum();
         final long widened = Arrays.stream(this.numbers)
-            .limit(200_000L)
+            .limit(200_000L * this.scale)
             .mapToObj(Long::valueOf)
             .peek(blackhole::consume)
             .flatMapToInt(number -> IntStream.of((int) (number % 100L), (int) (number % 7L)))
             .asLongStream()
             .sum();
         final double real = Arrays.stream(this.numbers)
-            .limit(200_000L)
+            .limit(200_000L * this.scale)
             .mapToObj(Double::valueOf)
             .peek(blackhole::consume)
             .flatMapToDouble(number -> DoubleStream.of(number + 0.5, number - 0.5))
             .sum();
         final double ints = Arrays.stream(this.numbers)
-            .limit(200_000L)
+            .limit(200_000L * this.scale)
             .mapToObj(Long::valueOf)
             .peek(blackhole::consume)
             .mapMultiToInt((number, sink) -> {
@@ -577,7 +604,7 @@ public class Main {
             .average()
             .getAsDouble();
         final long longs = Arrays.stream(this.numbers)
-            .limit(200_000L)
+            .limit(200_000L * this.scale)
             .mapToObj(Long::valueOf)
             .peek(blackhole::consume)
             .mapMultiToLong((number, sink) -> {
@@ -586,7 +613,7 @@ public class Main {
             })
             .sum();
         final double doubles = Arrays.stream(this.numbers)
-            .limit(200_000L)
+            .limit(200_000L * this.scale)
             .mapToObj(Double::valueOf)
             .peek(blackhole::consume)
             .mapMultiToDouble((number, sink) -> {
@@ -595,7 +622,7 @@ public class Main {
             })
             .sum();
         final Long[] array = Arrays.stream(this.numbers)
-            .limit(1_000L)
+            .limit(1_000L * this.scale)
             .boxed()
             .toArray(Long[]::new);
         return this.verified(
@@ -673,7 +700,7 @@ public class Main {
         final long stateful = this.mixed(
             Arrays.stream(this.numbers)
                 .parallel()
-                .mapToObj(number -> new Pair(number % 100_000L, number))
+                .mapToObj(number -> new Pair(number % (100_000L * this.scale), number))
                 .distinct()
                 .sorted(Comparator.comparingLong(Pair::head))
                 .mapToLong(Pair::tail)
@@ -724,20 +751,20 @@ public class Main {
     @Benchmark
     public long sources(final Blackhole blackhole) {
         final LongStream.Builder digits = LongStream.builder();
-        LongStream.rangeClosed(1L, 1_000L).forEach(digits::add);
+        LongStream.rangeClosed(1L, 1_000L * this.scale).forEach(digits::add);
         final long built = digits.build().map(number -> number + 1L).sum();
         final Stream.Builder<Long> stock = Stream.builder();
-        LongStream.rangeClosed(1L, 1_000L).boxed().forEach(stock::add);
+        LongStream.rangeClosed(1L, 1_000L * this.scale).boxed().forEach(stock::add);
         final long boxed = stock.build()
             .peek(blackhole::consume)
             .mapToLong(Long::longValue)
             .sum();
         final long infinite = Stream.iterate(1L, number -> number + 1L)
-            .limit(1_000L)
+            .limit(1_000L * this.scale)
             .peek(blackhole::consume)
             .mapToLong(Long::longValue)
             .sum();
-        final long nullable = LongStream.rangeClosed(1L, 1_000L)
+        final long nullable = LongStream.rangeClosed(1L, 1_000L * this.scale)
             .boxed()
             .flatMap(number -> Stream.ofNullable(number % 2L == 0L ? number : null))
             .peek(blackhole::consume)
@@ -745,7 +772,7 @@ public class Main {
             .sum();
         final long empty = Stream.<Long>empty().mapToLong(Long::longValue).sum();
         final long supported = StreamSupport.longStream(
-                Spliterators.spliterator(this.numbers, 0, 1_000, Spliterator.ORDERED),
+                Spliterators.spliterator(this.numbers, 0, 1_000 * this.scale, Spliterator.ORDERED),
                 false
             )
             .map(number -> number + 1L)
@@ -757,47 +784,48 @@ public class Main {
             .peek(blackhole::consume)
             .mapToLong(Long::longValue)
             .sum();
-        final long iterated = LongStream.iterate(1L, number -> number <= 500_000L, number -> number + 1L)
+        final long iterated = LongStream
+            .iterate(1L, number -> number <= 500_000L * this.scale, number -> number + 1L)
             .map(number -> number + 1L)
             .filter(number -> number % 2L == 0L)
             .map(number -> number * 2L)
             .map(number -> number - 3L)
             .sum();
         final long made = Stream.generate(() -> 2L)
-            .limit(500_000L)
+            .limit(500_000L * this.scale)
             .peek(blackhole::consume)
             .mapToLong(Long::longValue)
             .map(number -> number * 3L)
             .sum();
         final long concatenated = LongStream.concat(
-                LongStream.range(0L, 250_000L),
-                LongStream.range(250_000L, 500_000L)
+                LongStream.range(0L, 250_000L * this.scale),
+                LongStream.range(250_000L * this.scale, 500_000L * this.scale)
             )
             .map(number -> number + 5L)
             .filter(number -> number % 3L != 0L)
             .map(number -> number * 2L)
             .sum();
         final long ints = new Random(42L)
-            .ints(500_000L)
+            .ints(500_000L * this.scale)
             .asLongStream()
             .map(number -> number & 0xFFFFL)
             .map(number -> number + 1L)
             .filter(number -> number % 2L == 0L)
             .sum();
         final long longs = new Random(1_234L)
-            .longs(500_000L)
+            .longs(500_000L * this.scale)
             .map(number -> number & 0xFFFFL)
             .map(number -> number + 3L)
             .filter(number -> number % 2L != 0L)
             .sum();
         final long reals = (long) new Random(9_999L)
-            .doubles(500_000L)
+            .doubles(500_000L * this.scale)
             .map(number -> number * 100.0)
             .map(number -> number + 1.0)
             .filter(number -> number > 1.0)
             .sum();
         final long bounded = new Random(7L)
-            .ints(500_000L, 0, 1_000)
+            .ints(500_000L * this.scale, 0, 1_000)
             .asLongStream()
             .map(number -> number + 1L)
             .filter(number -> number % 2L == 0L)
@@ -824,7 +852,7 @@ public class Main {
             .sum();
         final long distinct = this.list.parallelStream()
             .unordered()
-            .map(number -> number % 200_000L)
+            .map(number -> number % (200_000L * this.scale))
             .distinct()
             .mapToLong(Long::longValue)
             .sum();
@@ -881,7 +909,7 @@ public class Main {
     public long ordered() {
         final long first = Arrays.stream(this.numbers)
             .parallel()
-            .filter(number -> number > 500_000L)
+            .filter(number -> number > 500_000L * this.scale)
             .map(number -> number + 1L)
             .findFirst()
             .getAsLong();
@@ -889,34 +917,37 @@ public class Main {
             Arrays.stream(this.numbers)
                 .parallel()
                 .map(number -> number * 2L)
-                .limit(100_000L)
+                .limit(100_000L * this.scale)
         );
         final long skipped = this.mixed(
             Arrays.stream(this.numbers)
                 .parallel()
-                .skip(900_000L)
+                .skip(900_000L * this.scale)
                 .map(number -> number + 1L)
         );
         final long taken = this.mixed(
             Arrays.stream(this.numbers)
                 .parallel()
-                .takeWhile(number -> number < 300_000L)
+                .takeWhile(number -> number < 300_000L * this.scale)
         );
         final long dropped = this.mixed(
             Arrays.stream(this.numbers)
                 .parallel()
-                .dropWhile(number -> number < 999_000L)
+                .dropWhile(number -> number < 999_000L * this.scale)
         );
-        final boolean any = Arrays.stream(this.numbers).anyMatch(number -> number > 999_990L);
-        final boolean all = Arrays.stream(this.numbers).allMatch(number -> number < 2_000_000L);
-        final boolean none = Arrays.stream(this.numbers).noneMatch(number -> number > 2_000_000L);
+        final boolean any = Arrays.stream(this.numbers)
+            .anyMatch(number -> number > 999_990L * this.scale);
+        final boolean all = Arrays.stream(this.numbers)
+            .allMatch(number -> number < 2_000_000L * this.scale);
+        final boolean none = Arrays.stream(this.numbers)
+            .noneMatch(number -> number > 2_000_000L * this.scale);
         final long found = Arrays.stream(this.numbers)
-            .filter(number -> number > 999_000L)
+            .filter(number -> number > 999_000L * this.scale)
             .map(number -> number + 7L)
             .findFirst()
             .getAsLong();
         final long only = Arrays.stream(this.numbers)
-            .filter(number -> number == 777_777L)
+            .filter(number -> number == 777_777L * this.scale)
             .map(number -> number * 2L)
             .findAny()
             .getAsLong();
@@ -962,8 +993,18 @@ public class Main {
         return mix[0];
     }
 
+    /**
+     * The sum checked against its constant, which is precomputed for the
+     * default workload of one million numbers and therefore binds only
+     * when {@code NUMBERS} is one; a scaled run has no constant to check
+     * against and returns the sum as it is.
+     *
+     * @param sum The folded result of a pipeline
+     * @param expected The constant precomputed for the default workload
+     * @return The sum
+     */
     private long verified(final long sum, final long expected) {
-        if (sum != expected) {
+        if (this.scale == 1 && sum != expected) {
             throw new IllegalStateException(
                 String.format("the sum %d does not match the expected %d", sum, expected)
             );
