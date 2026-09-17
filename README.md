@@ -59,6 +59,19 @@ The pipelines are built to measure the Stream API itself, not the
   `limit()`, and `forEachOrdered()`, fold through a rolling `31`-based
   mix, so a result that holds the right elements in the wrong order
   fails too.
+- **The workload scales.** The arrays hold one million numbers and the
+  text fixtures ten thousand sentences and lines, while every count,
+  slice, and threshold woven through the pipelines is a share of those
+  sizes.
+  The `NUMBERS` environment variable multiplies all of them, one by
+  default, so `NUMBERS=10` runs every pipeline over ten million
+  numbers.
+  Fixed are the arguments that shape a pipeline rather than size it:
+  the window widths, the small moduli that fan elements into a set
+  number of buckets, the random seeds, and the handful of elements
+  behind `overhead`.
+  The verified constants are precomputed for the default workload, so
+  `verified()` compares against them only when `NUMBERS` is 1.
 - **The full API, in combination.** The pipelines span all four stream
   types, `long`, `int`, `double`, and object, and weave terminal and
   intermediate methods together, including `flatMap()` and `mapMulti()`.
@@ -91,6 +104,8 @@ The state is thread-scoped and JMH drives each benchmark from a single
   as dead code.
 JMH writes the raw results to `target/jmh-result.csv`, which the CI
   pipeline parses into the table below.
+CI leaves `NUMBERS` at its default, so the table reflects one million
+  numbers per array.
 The benchmarks run on every push to `master`, once per JVM, and the
   table is regenerated automatically:
 
