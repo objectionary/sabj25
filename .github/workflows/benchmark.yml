@@ -17,7 +17,7 @@ jobs:
   benchmark:
     name: 'benchmark (${{ matrix.name }})'
     timeout-minutes: 25
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
@@ -64,7 +64,7 @@ jobs:
     needs: benchmark
     if: ${{ !cancelled() }}
     timeout-minutes: 5
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
