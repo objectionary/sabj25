@@ -6,6 +6,7 @@ version = 1
 path = [
     "README.md",
     "CLAUDE.md",
+    "renovate.json",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "Copyright (c) 2026 Objectionary.com"
