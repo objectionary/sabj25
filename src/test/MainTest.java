@@ -83,4 +83,13 @@ final class MainTest {
             equalTo(new Main(1).overhead())
         );
     }
+
+    @Test
+    void scalesFusableStatefulPipelineByMillions() {
+        assertThat(
+            "the fusable stateful hash over several million numbers must differ from the hash over one million, but it doesnt",
+            new Main(new Random().nextInt(2, 4)).fusable(),
+            not(equalTo(new Main(1).fusable()))
+        );
+    }
 }
