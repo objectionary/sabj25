@@ -77,7 +77,8 @@ The pipelines are built to measure the Stream API itself, not the
   intermediate methods together, including `flatMap()` and `mapMulti()`.
 - **One facet of the API per benchmark.** `stateless` covers the
   stateless operations including the one-to-one scalar conversions,
-  `stateful` the operations that must remember state, `fold` the
+  `stateful` the operations that must remember state, `fusable` those
+  same operations over boxed numbers with no barrier, `fold` the
   reduction terminals, `ordered` the short-circuiting ones, and so on
   through gatherers, collectors, sources, and parallel execution.
 

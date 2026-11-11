@@ -15,11 +15,12 @@ Non-standard Maven dirs: `src/main` and `src/test`.
 
 ## Benchmarks
 
-One class `Main`, twelve `@Benchmark` methods.
+One class `Main`, thirteen `@Benchmark` methods.
 Most run a `long` pipeline over `NUMBERS` million numbers, one million by default.
 Each method covers one facet of the Stream API.
 `stateless`: every stateless operation with scalar conversions, a primitive long chain sequential then parallel, and a megamorphic map/filter chain of many lambdas.
 `stateful`: operations that must remember state.
+`fusable`: sequential boxed `skip`, `distinct`, and `dropWhile` back to back, with nothing sink-bound between them.
 `gatherers`: the Java 25 `Gatherers` (window, scan, fold, `mapConcurrent`), hand-built gatherers, and a custom `Collector.of`, composed and driven in parallel.
 `collectors`: composed teeing/grouping/partitioning, nested collectors through tree and linked maps, the remaining collectors, plus a reference stream of `Pair` records, composed comparators, `thenComparing`, and `joining`.
 `fold`: `reduce` and the mutable three-arg `collect`, sequential and parallel, plus `IntStream`, `DoubleStream`, and `LongStream` summary statistics.
