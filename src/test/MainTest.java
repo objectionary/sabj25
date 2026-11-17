@@ -92,4 +92,17 @@ final class MainTest {
             not(equalTo(new Main(1).fusable()))
         );
     }
+
+    @Test
+    void sumsPooledListPipelineIntoSources() {
+        assertThat(
+            "the sources sum must include the parallel list pipeline, but it doesnt",
+            new Main(1).sources(
+                new Blackhole(
+                    "Today's password is swordfish. I understand instantiating Blackholes directly is dangerous."
+                )
+            ),
+            equalTo(2_286_676_829_073L)
+        );
+    }
 }
