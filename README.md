@@ -113,22 +113,22 @@ The benchmarks run on every push to `master`, once per JVM, and the
 
 | Benchmark | Temurin 25 | Zulu 25 | Corretto 25 | GraalVM 25 | Oracle 25 | Semeru 25 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `collectors` | 1159.526 | 1242.603 | 1282.610 | 704.374 | 1431.206 | 1125.063 |
-| `concurrent` | 202.820 | 201.627 | 202.641 | 140.814 | 200.609 | 296.784 |
-| `fanout` | 84.838 | 80.956 | 80.037 | 18.794 | 89.249 | 155.276 |
-| `fold` | 164.383 | 164.389 | 164.194 | 64.146 | 164.269 | 431.471 |
-| `gatherers` | 84.199 | 85.610 | 91.219 | 37.849 | 86.717 | 194.940 |
-| `materialize` | 147.587 | 144.959 | 122.865 | 46.396 | 142.602 | 143.114 |
-| `ordered` | 79.131 | 87.099 | 85.872 | 11.606 | 85.686 | 98.432 |
-| `overhead` | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.001 |
-| `sources` | 153.169 | 153.750 | 154.198 | 82.197 | 156.400 | 228.707 |
-| `stateful` | 68.994 | 69.439 | 68.896 | 14.247 | 69.309 | 77.256 |
-| `stateless` | 79.482 | 79.030 | 79.313 | 40.194 | 81.314 | 145.936 |
-| `text` | 9.776 | 9.699 | 9.745 | 7.691 | 9.786 | 17.663 |
+| `collectors` | 1249.185 | 770.226 | 967.490 | 813.437 | 1168.984 | 1268.606 |
+| `concurrent` | 279.941 | 132.813 | 166.930 | 258.183 | 200.419 | 419.722 |
+| `fanout` | 63.637 | 41.653 | 64.163 | 21.982 | 89.141 | 147.580 |
+| `fold` | 131.567 | 79.550 | 136.651 | 83.491 | 162.432 | 423.915 |
+| `gatherers` | 75.448 | 46.754 | 70.341 | 43.960 | 85.937 | 206.867 |
+| `materialize` | 96.665 | 74.782 | 122.511 | 57.107 | 144.683 | 136.227 |
+| `ordered` | 76.911 | 46.168 | 76.517 | 21.693 | 85.957 | 99.138 |
+| `overhead` | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
+| `sources` | 148.843 | 90.094 | 132.942 | 105.755 | 156.759 | 266.670 |
+| `stateful` | 22.777 | 14.786 | 60.196 | 17.831 | 68.644 | 80.971 |
+| `stateless` | 64.917 | 39.432 | 66.886 | 44.740 | 81.912 | 146.225 |
+| `text` | 7.465 | 4.965 | 7.958 | 9.356 | 9.690 | 17.599 |
 
 All scores are in milliseconds per operation (ms/op); lower is better.
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-11-03 at 06:52.
+on 2026-11-17 at 09:40.
 Each JVM ran on its own GitHub-hosted Linux runner,
 so the scores across columns are indicative, not strictly comparable.
 <!-- benchmark_end -->
@@ -143,6 +143,6 @@ so the scores across columns are indicative, not strictly comparable.
 [mapmulti]: https://github.com/Nikolas-Charalambidis/java-16-mapmulti-benchmark
 [rosales2023]: https://arxiv.org/abs/2302.10006
 [softwaremill]: https://softwaremill.com/benchmarking-java-streams/
-[benchmark-gha]: https://github.com/objectionary/sabj25/actions/runs/41588908503
+[benchmark-gha]: https://github.com/objectionary/sabj25/actions/runs/44055320473
 [jmh]: https://github.com/openjdk/jmh
 [Stream API]: https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/stream/package-summary.html
