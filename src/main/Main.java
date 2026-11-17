@@ -842,7 +842,7 @@ public class Main {
             .mapToLong(Long::longValue)
             .map(number -> number * 2L)
             .map(number -> number + 1L)
-            .filter(number -> number % 2L == 0L)
+            .filter(number -> number % 3L != 0L)
             .sum();
         final long hashed = this.set.stream()
             .mapToLong(Long::longValue)
@@ -869,7 +869,7 @@ public class Main {
                 + iterated + made + concatenated
                 + ints + longs + reals + bounded
                 + sequential + pooled + hashed + distinct + ordered,
-            1_620_009_495_741L
+            2_286_676_829_073L
         );
     }
 
