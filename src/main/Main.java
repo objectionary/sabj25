@@ -53,7 +53,9 @@ import org.openjdk.jmh.infra.Blackhole;
  * primitive long chain sequentially and across the fork-join pool and
  * repeats map and filter through enough distinct lambdas to turn the call
  * sites megamorphic, one of the stateful operations that must remember
- * state, one of the Java 25 gatherers together with gatherers built and
+ * state, one that runs skip, distinct, and dropWhile back to back over a
+ * sequential stream of boxed numbers with nothing sink-bound between them,
+ * one of the Java 25 gatherers together with gatherers built and
  * composed by hand and a hand-rolled collector of supplier, accumulator,
  * combiner, and finisher, one that collects through composed teeing,
  * grouping, and partitioning collectors, nests collectors inside collectors
@@ -208,6 +210,22 @@ public class Main {
                     .takeWhile(number -> number < 700_000L * this.scale)
             ),
             1_188_043_783_387_903_344L
+        );
+    }
+
+    @Benchmark
+    public long fusable() {
+        return this.verified(
+            this.mixed(
+                Arrays.stream(this.scrambled)
+                    .boxed()
+                    .skip(1_000L * this.scale)
+                    .map(number -> number % (300_000L * this.scale))
+                    .distinct()
+                    .dropWhile(number -> number < 50_000L * this.scale)
+                    .mapToLong(Long::longValue)
+            ),
+            -7_111_267_628_335_688_198L
         );
     }
 
